@@ -125,13 +125,29 @@
   .btn-gate-signin { background:transparent; color:var(--muted); border:1px solid var(--border); }
   .btn-gate-signin:hover { border-color:var(--violet-light); color:var(--white); }
 
-  /* Legal checkbox */
-  .legal-check { display:none; margin:16px auto 0; max-width:680px; width:100%; background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.2); border-radius:12px; padding:14px 18px; align-items:flex-start; gap:12px; }
-  .legal-check.show { display:flex; }
-  .legal-check input[type=checkbox] { margin-top:2px; accent-color:var(--violet); flex-shrink:0; width:16px; height:16px; cursor:pointer; }
-  .legal-check-text { font-size:12px; color:var(--muted); line-height:1.6; }
-  .legal-check-text a { color:var(--violet-light); text-decoration:none; }
-  .legal-check-text a:hover { text-decoration:underline; }
+  /* Legal checkbox — lives inside upload-section between chips and split btn */
+  .legal-check {
+    display: none;
+    margin: 20px 0 0;
+    background: rgba(124,58,237,0.07);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 18px;
+    align-items: flex-start;
+    gap: 12px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .legal-check:hover { border-color: var(--violet-light); }
+  .legal-check.show { display: flex; }
+  .legal-check input[type=checkbox] {
+    margin-top: 1px; accent-color: var(--violet);
+    flex-shrink: 0; width: 17px; height: 17px; cursor: pointer;
+  }
+  .legal-check-text { font-size: 12px; color: var(--muted); line-height: 1.65; user-select:none; }
+  .legal-check-text strong { color: var(--white); font-weight: 600; }
+  .legal-check-text a { color: var(--violet-light); text-decoration: none; }
+  .legal-check-text a:hover { text-decoration: underline; }
 
   /* Waveform */
   .waveform-wrap { position:relative; width:100%; max-width:680px; margin:52px auto 0; height:90px; }
@@ -379,14 +395,6 @@
     <button class="btn-gate btn-gate-signup" onclick="openModal('signup')">Create free account</button>
   </div>
 
-  <!-- Legal acknowledgement (logged in only) -->
-  <div class="legal-check" id="legalCheck">
-    <input type="checkbox" id="legalCb" onchange="updateSplitBtn()">
-    <div class="legal-check-text">
-      I confirm I own the rights to this audio or have permission to process it. I understand that splitting copyrighted material without authorisation may violate copyright law. I accept Stemify's <a href="#legal">Terms of Use</a>.
-    </div>
-  </div>
-
   <div class="waveform-wrap"><canvas id="waveCanvas"></canvas></div>
 
   <div class="upload-section">
@@ -409,6 +417,14 @@
         <button class="chip" data-n="10">10 stems</button>
       </div>
     </div>
+    <!-- Legal acknowledgement — only visible when logged in -->
+    <label class="legal-check" id="legalCheck" for="legalCb">
+      <input type="checkbox" id="legalCb" onchange="updateSplitBtn()">
+      <div class="legal-check-text">
+        <strong>I confirm I have the right to process this audio.</strong> I understand that splitting copyrighted material without authorisation may violate copyright law, and I accept Stemify's <a href="#legal" onclick="event.stopPropagation()">Terms of Use</a>.
+      </div>
+    </label>
+
     <button class="btn-split" id="splitBtn" disabled>Split Track</button>
   </div>
 
@@ -420,7 +436,7 @@
       <strong>Stemify is free to try — keep it alive!</strong>
       <span>If Stemify saved you time, buy us a coffee. It funds the servers that split your tracks.</span>
     </div>
-    <a href="https://www.buymeacoffee.com/gazitr" target="_blank" rel="noopener">
+    <a href="https://www.buymeacoffee.com/YOUR_BMAC_USERNAME" target="_blank" rel="noopener">
       <button class="btn-bmac">☕ Buy us a coffee</button>
     </a>
   </div>
@@ -431,6 +447,7 @@
   <div style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:600;">Splitting your track…</div>
   <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
   <div class="processing-label" id="processingLabel">Analysing frequencies…</div>
+  <button onclick="cancelProcessing()" style="margin-top:18px;background:none;border:1px solid var(--border);color:var(--muted);padding:8px 20px;border-radius:8px;font-family:inherit;font-size:13px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.borderColor='var(--violet-light)';this.style.color='var(--white)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">Cancel</button>
 </div>
 
 <!-- RESULTS -->
@@ -445,7 +462,7 @@
     <div style="font-size:32px;margin-bottom:10px;">☕</div>
     <strong>Stems sound great? Support Stemify!</strong>
     <span>Your coffee keeps the AI running and the servers paid.</span>
-    <a href="https://www.buymeacoffee.com/gazitr" target="_blank" rel="noopener">
+    <a href="https://www.buymeacoffee.com/YOUR_BMAC_USERNAME" target="_blank" rel="noopener">
       <button class="btn-bmac">Buy us a coffee</button>
     </a>
   </div>
@@ -613,11 +630,11 @@ function socialAuth(provider) {
 
 // ── UI STATE ──
 function updateAuthUI() {
-  const loggedOut = document.getElementById('navLoggedOut');
-  const loggedIn  = document.getElementById('navLoggedIn');
-  const authGate  = document.getElementById('authGate');
+  const loggedOut  = document.getElementById('navLoggedOut');
+  const loggedIn   = document.getElementById('navLoggedIn');
+  const authGate   = document.getElementById('authGate');
   const legalCheck = document.getElementById('legalCheck');
-  const dropzone  = document.getElementById('dropzone');
+  const dropzone   = document.getElementById('dropzone');
 
   if (authToken && currentUser) {
     loggedOut.style.display = 'none';
@@ -633,9 +650,22 @@ function updateAuthUI() {
     loggedIn.classList.remove('show');
     authGate.classList.add('show');
     legalCheck.classList.remove('show');
+    document.getElementById('legalCb').checked = false;
     dropzone.classList.add('locked');
   }
   updateSplitBtn();
+}
+
+let pollInterval = null;
+let fakeProgressInterval = null;
+
+function cancelProcessing() {
+  if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+  if (fakeProgressInterval) { clearInterval(fakeProgressInterval); fakeProgressInterval = null; }
+  document.getElementById('processing').classList.remove('show');
+  document.getElementById('splitBtn').disabled = false;
+  splitMode = false;
+  showToast('Processing cancelled.');
 }
 function updateSplitBtn() {
   const cb = document.getElementById('legalCb');
@@ -902,15 +932,37 @@ async function startProcessing() {
     const startData=await resp.json();
     currentJobId=startData.job_id;
     if(startData.user){currentUser={...currentUser,...startData.user};localStorage.setItem('stemify_user',JSON.stringify(currentUser));document.getElementById('navStems').textContent=currentUser.stem_count+' stems used';}
+    const POLL_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
+    const pollStart = Date.now();
     const job=await new Promise((resolve,reject)=>{
       const pi=setInterval(async()=>{
+        // Timeout guard
+        if (Date.now() - pollStart > POLL_TIMEOUT_MS) {
+          clearInterval(pi);
+          reject(new Error('Processing timed out after 10 minutes. The server may be overloaded — please try again.'));
+          return;
+        }
+        // Update label based on elapsed time so it doesn't feel frozen
+        const elapsed = Math.floor((Date.now() - pollStart) / 1000);
+        if (elapsed > 120) label.textContent = 'Still working — large files take a few minutes…';
+        else if (elapsed > 60) label.textContent = 'Demucs is separating your stems…';
+        else if (elapsed > 30) label.textContent = 'Processing audio — almost there…';
         try{
           const pr=await fetch(API_BASE+'/api/job/'+currentJobId,{headers:{'Authorization':'Bearer '+authToken}});
-          if(!pr.ok){clearInterval(pi);reject(new Error('Poll failed'));return;}
+          if(pr.status===401){clearInterval(pi);clearSession();updateAuthUI();reject(new Error('Session expired. Please sign in again.'));return;}
+          if(!pr.ok){
+            // Don't abort on a single poll failure — server might be briefly busy
+            console.warn('Poll returned', pr.status, '— retrying');
+            return;
+          }
           const d=await pr.json();
           if(d.status==='done'){clearInterval(pi);resolve(d);}
-          else if(d.status==='error'){clearInterval(pi);reject(new Error(d.error||'Processing failed'));}
-        }catch(e){clearInterval(pi);reject(e);}
+          else if(d.status==='error'){clearInterval(pi);reject(new Error(d.error||'Processing failed on the server. Please try a shorter file or fewer stems.'));}
+          // status==='processing' → keep polling
+        }catch(e){
+          // Network hiccup — log but don't abort, will retry next interval
+          console.warn('Poll network error:', e.message);
+        }
       },3000);
     });
     clearInterval(iv); fill.style.width='100%'; label.textContent='Done!';
