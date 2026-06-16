@@ -59,6 +59,146 @@
     transition: background 0.2s, transform 0.1s;
   }
   .btn-nav:hover { background: var(--violet-light); transform: translateY(-1px); }
+  .btn-nav-ghost {
+    background: transparent; color: var(--muted);
+    padding: 9px 18px; border-radius: 8px;
+    font-size: 14px; font-weight: 500; cursor: pointer;
+    border: 1px solid var(--border); font-family: inherit;
+    transition: all 0.2s;
+  }
+  .btn-nav-ghost:hover { border-color: var(--violet-light); color: var(--white); }
+
+  /* ── USER PILL (logged in state) ── */
+  .user-pill {
+    display: none;
+    align-items: center; gap: 10px;
+    background: rgba(124,58,237,0.12);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 6px 16px 6px 10px;
+    font-size: 13px;
+  }
+  .user-pill.show { display: flex; }
+  .user-avatar {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--violet), var(--cyan));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: #fff; flex-shrink: 0;
+  }
+  .user-email { color: var(--white); font-weight: 500; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .user-stems { color: var(--cyan); font-size: 12px; }
+  .btn-signout {
+    background: none; border: none; color: var(--muted);
+    font-size: 12px; cursor: pointer; padding: 0; font-family: inherit;
+    transition: color 0.2s;
+  }
+  .btn-signout:hover { color: var(--white); }
+
+  /* ── AUTH MODAL ── */
+  .modal-backdrop {
+    position: fixed; inset: 0; z-index: 500;
+    background: rgba(10,14,26,0.85);
+    backdrop-filter: blur(8px);
+    display: none; align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  .modal-backdrop.show { display: flex; }
+  .modal {
+    background: var(--slate);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 40px 36px;
+    width: 100%; max-width: 420px;
+    box-shadow: 0 0 80px rgba(124,58,237,0.25);
+    position: relative;
+  }
+  .modal-close {
+    position: absolute; top: 16px; right: 18px;
+    background: none; border: none; color: var(--muted);
+    font-size: 22px; cursor: pointer; line-height: 1;
+    transition: color 0.2s;
+  }
+  .modal-close:hover { color: var(--white); }
+  .modal-logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 20px; font-weight: 700;
+    background: linear-gradient(135deg, var(--violet-light), var(--cyan));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 6px;
+  }
+  .modal-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 24px; font-weight: 700;
+    margin-bottom: 6px; letter-spacing: -0.5px;
+  }
+  .modal-sub { color: var(--muted); font-size: 14px; margin-bottom: 28px; line-height: 1.5; }
+
+  /* Tab switcher */
+  .auth-tabs {
+    display: flex; gap: 4px;
+    background: var(--slate2); border-radius: 10px;
+    padding: 4px; margin-bottom: 24px;
+  }
+  .auth-tab {
+    flex: 1; padding: 8px; border-radius: 7px;
+    border: none; background: none;
+    font-family: inherit; font-size: 14px; font-weight: 500;
+    color: var(--muted); cursor: pointer; transition: all 0.2s;
+  }
+  .auth-tab.active {
+    background: var(--violet); color: #fff;
+    box-shadow: 0 0 16px rgba(124,58,237,0.4);
+  }
+
+  /* Form fields */
+  .field { margin-bottom: 16px; }
+  .field label {
+    display: block; font-size: 13px; font-weight: 500;
+    color: var(--muted); margin-bottom: 7px; letter-spacing: 0.2px;
+  }
+  .field input {
+    width: 100%; padding: 12px 14px;
+    background: var(--navy); border: 1px solid var(--border);
+    border-radius: 10px; color: var(--white);
+    font-family: inherit; font-size: 14px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+  }
+  .field input:focus {
+    border-color: var(--violet-light);
+    box-shadow: 0 0 0 3px rgba(124,58,237,0.15);
+  }
+  .field input::placeholder { color: #445; }
+
+  .auth-error {
+    background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3);
+    color: #f87171; border-radius: 8px; padding: 10px 14px;
+    font-size: 13px; margin-bottom: 16px; display: none;
+  }
+  .auth-error.show { display: block; }
+
+  .btn-auth {
+    width: 100%; padding: 14px;
+    border-radius: 11px; border: none;
+    background: linear-gradient(135deg, var(--violet), #5b21b6);
+    color: #fff; font-family: 'Space Grotesk', sans-serif;
+    font-size: 16px; font-weight: 600;
+    cursor: pointer; margin-top: 4px;
+    box-shadow: 0 0 24px rgba(124,58,237,0.4);
+    transition: all 0.2s; letter-spacing: -0.2px;
+  }
+  .btn-auth:hover { transform: translateY(-1px); box-shadow: 0 0 40px rgba(124,58,237,0.6); }
+  .btn-auth:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .auth-switch {
+    text-align: center; margin-top: 18px;
+    font-size: 13px; color: var(--muted);
+  }
+  .auth-switch a {
+    color: var(--violet-light); text-decoration: none;
+    font-weight: 500; cursor: pointer;
+  }
+  .auth-switch a:hover { text-decoration: underline; }
 
   /* ── HERO ── */
   .hero {
@@ -67,9 +207,7 @@
     padding: 120px 24px 80px;
     position: relative; overflow: hidden;
   }
-  .hero-bg {
-    position: absolute; inset: 0; pointer-events: none;
-  }
+  .hero-bg { position: absolute; inset: 0; pointer-events: none; }
   .orb {
     position: absolute; border-radius: 50%;
     filter: blur(80px); opacity: 0.35;
@@ -83,9 +221,7 @@
     color: var(--cyan); margin-bottom: 20px;
     display: flex; align-items: center; gap: 10px;
   }
-  .eyebrow::before, .eyebrow::after {
-    content: ''; display: block; width: 32px; height: 1px; background: var(--cyan);
-  }
+  .eyebrow::before, .eyebrow::after { content: ''; display: block; width: 32px; height: 1px; background: var(--cyan); }
 
   h1 {
     font-family: 'Space Grotesk', sans-serif;
@@ -103,51 +239,62 @@
     font-size: 18px; text-align: center; max-width: 520px; line-height: 1.65;
   }
 
+  /* ── AUTH GATE BANNER ── */
+  .auth-gate {
+    display: none;
+    margin: 28px auto 0; max-width: 680px; width: 100%;
+    background: rgba(124,58,237,0.08);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 20px;
+    align-items: center; gap: 14px;
+  }
+  .auth-gate.show { display: flex; }
+  .auth-gate-text { font-size: 14px; color: var(--muted); flex: 1; }
+  .auth-gate-text strong { color: var(--white); }
+  .btn-gate-signup {
+    background: var(--violet); color: #fff;
+    padding: 9px 20px; border-radius: 8px;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    border: none; font-family: inherit; white-space: nowrap;
+    transition: background 0.2s;
+  }
+  .btn-gate-signup:hover { background: var(--violet-light); }
+  .btn-gate-signin {
+    background: transparent; color: var(--muted);
+    padding: 9px 16px; border-radius: 8px;
+    font-size: 13px; font-weight: 500; cursor: pointer;
+    border: 1px solid var(--border); font-family: inherit; white-space: nowrap;
+    transition: all 0.2s;
+  }
+  .btn-gate-signin:hover { border-color: var(--violet-light); color: var(--white); }
+
   /* ── WAVEFORM CANVAS ── */
   .waveform-wrap {
-    position: relative;
-    width: 100%; max-width: 680px;
-    margin: 52px auto 0;
-    height: 90px;
+    position: relative; width: 100%; max-width: 680px;
+    margin: 52px auto 0; height: 90px;
   }
-  #waveCanvas {
-    width: 100%; height: 100%;
-    border-radius: 12px;
-  }
+  #waveCanvas { width: 100%; height: 100%; border-radius: 12px; }
 
   /* ── UPLOAD ZONE ── */
-  .upload-section {
-    width: 100%; max-width: 680px;
-    margin: 32px auto 0;
-  }
+  .upload-section { width: 100%; max-width: 680px; margin: 32px auto 0; }
   .dropzone {
-    border: 2px dashed var(--border);
-    border-radius: 16px;
-    padding: 48px 32px;
-    text-align: center;
-    background: rgba(124,58,237,0.06);
-    cursor: pointer;
-    transition: border-color 0.25s, background 0.25s, transform 0.2s;
-    position: relative;
+    border: 2px dashed var(--border); border-radius: 16px; padding: 48px 32px;
+    text-align: center; background: rgba(124,58,237,0.06); cursor: pointer;
+    transition: border-color 0.25s, background 0.25s, transform 0.2s; position: relative;
   }
   .dropzone:hover, .dropzone.drag-over {
-    border-color: var(--violet-light);
-    background: rgba(124,58,237,0.12);
-    transform: translateY(-2px);
+    border-color: var(--violet-light); background: rgba(124,58,237,0.12); transform: translateY(-2px);
   }
+  .dropzone.locked { cursor: default; opacity: 0.5; pointer-events: none; }
   .dropzone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
   .drop-icon {
     width: 52px; height: 52px; margin: 0 auto 16px;
-    background: linear-gradient(135deg, var(--violet), #3b1fa8);
-    border-radius: 14px;
-    display: flex; align-items: center; justify-content: center;
-    box-shadow: var(--glow);
+    background: linear-gradient(135deg, var(--violet), #3b1fa8); border-radius: 14px;
+    display: flex; align-items: center; justify-content: center; box-shadow: var(--glow);
   }
   .drop-icon svg { width: 26px; height: 26px; fill: none; stroke: #fff; stroke-width: 1.8; }
-  .drop-title {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 18px; font-weight: 600; margin-bottom: 6px;
-  }
+  .drop-title { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 600; margin-bottom: 6px; }
   .drop-sub { color: var(--muted); font-size: 14px; }
   .drop-sub span { color: var(--violet-light); font-weight: 500; }
   .formats { margin-top: 10px; font-size: 12px; color: #556; }
@@ -155,38 +302,31 @@
   /* ── STEM COUNT SELECT ── */
   .stem-control {
     display: flex; align-items: center; justify-content: center;
-    gap: 12px; margin-top: 20px;
-    flex-wrap: wrap;
+    gap: 12px; margin-top: 20px; flex-wrap: wrap;
   }
   .stem-label { font-size: 14px; color: var(--muted); }
   .stem-chips { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
   .chip {
-    padding: 6px 16px; border-radius: 100px;
-    border: 1px solid var(--border);
-    font-size: 13px; font-weight: 500;
-    cursor: pointer; transition: all 0.18s;
-    background: transparent; color: var(--muted);
-    font-family: inherit;
+    padding: 6px 16px; border-radius: 100px; border: 1px solid var(--border);
+    font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.18s;
+    background: transparent; color: var(--muted); font-family: inherit;
   }
   .chip:hover { border-color: var(--violet-light); color: var(--white); }
   .chip.active { background: var(--violet); border-color: var(--violet); color: #fff; }
 
   /* ── SPLIT BUTTON ── */
   .btn-split {
-    display: block; width: 100%; max-width: 320px;
-    margin: 28px auto 0;
+    display: block; width: 100%; max-width: 320px; margin: 28px auto 0;
     padding: 16px; border-radius: 12px;
     background: linear-gradient(135deg, var(--violet), #5b21b6);
     color: #fff; font-family: 'Space Grotesk', sans-serif;
     font-size: 17px; font-weight: 600; letter-spacing: -0.3px;
     border: none; cursor: pointer;
-    box-shadow: 0 0 30px rgba(124,58,237,0.5);
-    transition: all 0.2s;
+    box-shadow: 0 0 30px rgba(124,58,237,0.5); transition: all 0.2s;
     position: relative; overflow: hidden;
   }
   .btn-split::after {
-    content: '';
-    position: absolute; inset: 0;
+    content: ''; position: absolute; inset: 0;
     background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
     opacity: 0; transition: opacity 0.2s;
   }
@@ -196,238 +336,142 @@
 
   /* ── AD BANNER PLACEHOLDER ── */
   .ad-banner {
-    max-width: 728px; margin: 48px auto 0;
-    height: 90px; border-radius: 10px;
-    border: 1px dashed #2a2f42;
-    display: flex; align-items: center; justify-content: center;
-    color: #3a3f52; font-size: 12px; letter-spacing: 1px;
-    background: rgba(255,255,255,0.01);
+    max-width: 728px; margin: 48px auto 0; height: 90px; border-radius: 10px;
+    border: 1px dashed #2a2f42; display: flex; align-items: center; justify-content: center;
+    color: #3a3f52; font-size: 12px; letter-spacing: 1px; background: rgba(255,255,255,0.01);
   }
 
   /* ── PROCESSING STATE ── */
-  .processing {
-    display: none; text-align: center;
-    margin-top: 40px;
-  }
+  .processing { display: none; text-align: center; margin-top: 40px; }
   .processing.show { display: block; }
   .progress-track {
-    width: 100%; max-width: 480px;
-    height: 4px; background: var(--slate2);
+    width: 100%; max-width: 480px; height: 4px; background: var(--slate2);
     border-radius: 100px; margin: 20px auto 0; overflow: hidden;
   }
   .progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--violet), var(--cyan));
-    border-radius: 100px;
-    width: 0%;
-    transition: width 0.15s ease;
+    height: 100%; background: linear-gradient(90deg, var(--violet), var(--cyan));
+    border-radius: 100px; width: 0%; transition: width 0.15s ease;
   }
-  .processing-label {
-    font-size: 14px; color: var(--muted); margin-top: 12px;
-  }
+  .processing-label { font-size: 14px; color: var(--muted); margin-top: 12px; }
 
   /* ── RESULTS ── */
   .results { display: none; max-width: 780px; margin: 60px auto 0; padding: 0 24px; }
   .results.show { display: block; }
   .results-title {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 22px; font-weight: 600;
+    font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 600;
     margin-bottom: 24px; text-align: center;
   }
   .results-title span { color: var(--violet-light); }
-  .stems-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 16px;
-  }
+  .stems-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
   .stem-card {
-    background: var(--slate);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 20px;
-    transition: transform 0.2s, border-color 0.2s;
+    background: var(--slate); border: 1px solid var(--border); border-radius: 16px;
+    padding: 20px; transition: transform 0.2s, border-color 0.2s;
   }
   .stem-card:hover { transform: translateY(-3px); border-color: var(--violet-light); }
-  .stem-header {
-    display: flex; align-items: center; gap: 12px; margin-bottom: 14px;
-  }
+  .stem-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
   .stem-icon {
     width: 40px; height: 40px; border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 19px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 19px; flex-shrink: 0;
   }
-  .stem-name {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 15px; font-weight: 600;
-  }
+  .stem-name { font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 600; }
   .stem-key { font-size: 11px; color: var(--muted); margin-top: 1px; }
   .mini-wave {
-    height: 36px; width: 100%; border-radius: 6px;
-    margin-bottom: 12px;
-    display: flex; align-items: center; gap: 2px;
-    overflow: hidden;
+    height: 36px; width: 100%; border-radius: 6px; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 2px; overflow: hidden;
   }
-  .mini-bar {
-    flex: 1; border-radius: 2px;
-    transition: height 0.1s;
-  }
-  .stem-controls {
-    display: flex; gap: 8px;
-  }
+  .mini-bar { flex: 1; border-radius: 2px; transition: height 0.1s; }
+  .stem-controls { display: flex; gap: 8px; }
   .btn-play {
-    flex: 1; padding: 8px;
-    border-radius: 8px; border: none;
-    background: rgba(124,58,237,0.2);
-    color: var(--violet-light); cursor: pointer;
-    font-size: 13px; font-weight: 500;
-    font-family: inherit; transition: background 0.18s;
+    flex: 1; padding: 8px; border-radius: 8px; border: none;
+    background: rgba(124,58,237,0.2); color: var(--violet-light); cursor: pointer;
+    font-size: 13px; font-weight: 500; font-family: inherit; transition: background 0.18s;
     display: flex; align-items: center; justify-content: center; gap: 6px;
   }
   .btn-play:hover { background: rgba(124,58,237,0.4); }
   .btn-dl {
-    padding: 8px 14px;
-    border-radius: 8px; border: 1px solid var(--border);
-    background: transparent; color: var(--muted);
-    cursor: pointer; font-size: 13px;
-    font-family: inherit; transition: all 0.18s;
+    padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border);
+    background: transparent; color: var(--muted); cursor: pointer;
+    font-size: 13px; font-family: inherit; transition: all 0.18s;
   }
   .btn-dl:hover { border-color: var(--cyan); color: var(--cyan); }
   .btn-dl-all {
-    display: block; width: 100%; max-width: 320px;
-    margin: 28px auto 0; padding: 14px;
-    border-radius: 12px; border: 1px solid var(--violet);
-    background: transparent; color: var(--violet-light);
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 15px; font-weight: 600;
-    cursor: pointer; transition: all 0.2s;
+    display: block; width: 100%; max-width: 320px; margin: 28px auto 0; padding: 14px;
+    border-radius: 12px; border: 1px solid var(--violet); background: transparent;
+    color: var(--violet-light); font-family: 'Space Grotesk', sans-serif;
+    font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s;
   }
   .btn-dl-all:hover { background: rgba(124,58,237,0.15); }
 
   /* ── AD SQUARE ── */
   .ad-square {
-    width: 300px; height: 250px;
-    border: 1px dashed #2a2f42; border-radius: 10px;
+    width: 300px; height: 250px; border: 1px dashed #2a2f42; border-radius: 10px;
     display: flex; align-items: center; justify-content: center;
-    color: #3a3f52; font-size: 12px; letter-spacing: 1px;
-    margin: 0 auto;
+    color: #3a3f52; font-size: 12px; letter-spacing: 1px; margin: 0 auto;
   }
 
   /* ── HOW IT WORKS ── */
-  .how {
-    max-width: 900px; margin: 120px auto 0;
-    padding: 0 24px;
-  }
+  .how { max-width: 900px; margin: 120px auto 0; padding: 0 24px; }
   .section-eyebrow {
-    text-align: center;
-    font-size: 11px; font-weight: 600; letter-spacing: 3px;
+    text-align: center; font-size: 11px; font-weight: 600; letter-spacing: 3px;
     text-transform: uppercase; color: var(--cyan); margin-bottom: 14px;
   }
   .section-title {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: clamp(28px, 4vw, 42px); font-weight: 700;
-    text-align: center; letter-spacing: -1px; margin-bottom: 60px;
+    font-family: 'Space Grotesk', sans-serif; font-size: clamp(28px, 4vw, 42px);
+    font-weight: 700; text-align: center; letter-spacing: -1px; margin-bottom: 60px;
   }
-  .steps {
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 24px;
-  }
+  .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; }
   .step {
     background: var(--slate); border: 1px solid var(--border);
-    border-radius: 16px; padding: 28px 24px;
-    position: relative;
+    border-radius: 16px; padding: 28px 24px; position: relative;
   }
   .step-num {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 48px; font-weight: 700;
-    color: rgba(124,58,237,0.2); line-height: 1;
-    margin-bottom: 16px;
+    font-family: 'Space Grotesk', sans-serif; font-size: 48px; font-weight: 700;
+    color: rgba(124,58,237,0.2); line-height: 1; margin-bottom: 16px;
   }
-  .step h3 {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 16px; font-weight: 600; margin-bottom: 8px;
-  }
+  .step h3 { font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 600; margin-bottom: 8px; }
   .step p { font-size: 14px; color: var(--muted); line-height: 1.6; }
 
   /* ── STEMS SHOWCASE ── */
-  .showcase {
-    max-width: 900px; margin: 100px auto 0; padding: 0 24px;
-  }
-  .stems-list {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 12px; margin-top: 40px;
-  }
+  .showcase { max-width: 900px; margin: 100px auto 0; padding: 0 24px; }
+  .stems-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; margin-top: 40px; }
   .stem-badge {
-    display: flex; align-items: center; gap: 10px;
-    background: var(--slate); border: 1px solid var(--border);
-    border-radius: 12px; padding: 14px 16px;
+    display: flex; align-items: center; gap: 10px; background: var(--slate);
+    border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px;
     font-size: 14px; font-weight: 500;
   }
   .stem-badge span { font-size: 20px; }
 
   /* ── PRICING ── */
-  .pricing {
-    max-width: 800px; margin: 100px auto 0; padding: 0 24px;
-  }
-  .plans {
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px; margin-top: 40px;
-  }
+  .pricing { max-width: 800px; margin: 100px auto 0; padding: 0 24px; }
+  .plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 40px; }
   .plan {
     background: var(--slate); border: 1px solid var(--border);
-    border-radius: 20px; padding: 32px 24px;
-    text-align: center; position: relative;
+    border-radius: 20px; padding: 32px 24px; text-align: center; position: relative;
   }
-  .plan.popular {
-    border-color: var(--violet);
-    box-shadow: var(--glow);
-  }
+  .plan.popular { border-color: var(--violet); box-shadow: var(--glow); }
   .popular-tag {
     position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
-    background: var(--violet); color: #fff;
-    font-size: 11px; font-weight: 700; letter-spacing: 1px;
-    padding: 4px 14px; border-radius: 100px; text-transform: uppercase;
+    background: var(--violet); color: #fff; font-size: 11px; font-weight: 700;
+    letter-spacing: 1px; padding: 4px 14px; border-radius: 100px; text-transform: uppercase;
   }
-  .plan-name {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 15px; font-weight: 600; color: var(--muted); margin-bottom: 12px;
-  }
-  .plan-price {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 40px; font-weight: 700; letter-spacing: -2px;
-  }
+  .plan-name { font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 600; color: var(--muted); margin-bottom: 12px; }
+  .plan-price { font-family: 'Space Grotesk', sans-serif; font-size: 40px; font-weight: 700; letter-spacing: -2px; }
   .plan-price sup { font-size: 20px; vertical-align: top; margin-top: 8px; display: inline-block; }
   .plan-price sub { font-size: 14px; color: var(--muted); font-weight: 400; }
-  .plan-features {
-    list-style: none; margin: 20px 0 28px;
-    font-size: 14px; color: var(--muted); text-align: left;
-  }
+  .plan-features { list-style: none; margin: 20px 0 28px; font-size: 14px; color: var(--muted); text-align: left; }
   .plan-features li { padding: 6px 0; display: flex; align-items: center; gap: 8px; }
   .plan-features li::before { content: '✓'; color: var(--cyan); font-weight: 700; }
-  .btn-plan {
-    width: 100%; padding: 12px; border-radius: 10px;
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 14px; font-weight: 600; cursor: pointer;
-    transition: all 0.2s;
-  }
-  .btn-plan-outline {
-    background: transparent; border: 1px solid var(--border); color: var(--white);
-  }
+  .btn-plan { width: 100%; padding: 12px; border-radius: 10px; font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  .btn-plan-outline { background: transparent; border: 1px solid var(--border); color: var(--white); }
   .btn-plan-outline:hover { border-color: var(--violet-light); }
-  .btn-plan-fill {
-    background: linear-gradient(135deg, var(--violet), #5b21b6);
-    border: none; color: #fff;
-    box-shadow: 0 0 20px rgba(124,58,237,0.4);
-  }
+  .btn-plan-fill { background: linear-gradient(135deg, var(--violet), #5b21b6); border: none; color: #fff; box-shadow: 0 0 20px rgba(124,58,237,0.4); }
   .btn-plan-fill:hover { transform: translateY(-1px); }
 
   /* ── FOOTER ── */
   footer {
-    margin-top: 100px;
-    border-top: 1px solid var(--border);
-    padding: 40px 48px;
-    display: flex; align-items: center; justify-content: space-between;
-    flex-wrap: wrap; gap: 16px;
-    color: var(--muted); font-size: 13px;
+    margin-top: 100px; border-top: 1px solid var(--border);
+    padding: 40px 48px; display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 16px; color: var(--muted); font-size: 13px;
   }
   footer a { color: var(--muted); text-decoration: none; }
   footer a:hover { color: var(--white); }
@@ -437,17 +481,26 @@
   .toast {
     position: fixed; bottom: 24px; right: 24px;
     background: var(--slate); border: 1px solid var(--violet);
-    padding: 12px 20px; border-radius: 10px;
-    font-size: 14px; color: var(--white);
-    transform: translateY(80px); opacity: 0;
-    transition: all 0.3s; z-index: 999;
+    padding: 12px 20px; border-radius: 10px; font-size: 14px; color: var(--white);
+    transform: translateY(80px); opacity: 0; transition: all 0.3s; z-index: 999;
   }
   .toast.show { transform: translateY(0); opacity: 1; }
+
+  /* ── SPINNER ── */
+  .spinner {
+    display: inline-block; width: 14px; height: 14px;
+    border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff;
+    border-radius: 50%; animation: spin 0.7s linear infinite;
+    margin-right: 8px; vertical-align: middle;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
 
   @media (max-width: 640px) {
     nav { padding: 14px 20px; }
     .nav-links { display: none; }
     footer { flex-direction: column; padding: 32px 20px; }
+    .modal { padding: 28px 20px; }
+    .auth-gate { flex-wrap: wrap; }
   }
 </style>
 </head>
@@ -460,9 +513,56 @@
     <a href="#how">How it works</a>
     <a href="#stems">Stems</a>
     <a href="#pricing">Pricing</a>
-    <button class="btn-nav">Sign up free</button>
+
+    <!-- Logged-out nav -->
+    <div id="navLoggedOut" style="display:flex;gap:8px;align-items:center;">
+      <button class="btn-nav-ghost" onclick="openModal('signin')">Sign in</button>
+      <button class="btn-nav" onclick="openModal('signup')">Sign up free</button>
+    </div>
+
+    <!-- Logged-in nav -->
+    <div class="user-pill" id="navLoggedIn">
+      <div class="user-avatar" id="navAvatar">?</div>
+      <div>
+        <div class="user-email" id="navEmail">user@example.com</div>
+        <div class="user-stems" id="navStems">0 stems used</div>
+      </div>
+      <button class="btn-signout" onclick="signOut()" title="Sign out">✕</button>
+    </div>
   </div>
 </nav>
+
+<!-- ── AUTH MODAL ── -->
+<div class="modal-backdrop" id="authModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <div class="modal-logo">Stemify</div>
+    <div class="modal-title" id="modalTitle">Create your account</div>
+    <div class="modal-sub" id="modalSub">Sign up free — your stem splits are tracked and ready when you return.</div>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tabSignup" onclick="switchTab('signup')">Sign up</button>
+      <button class="auth-tab" id="tabSignin" onclick="switchTab('signin')">Sign in</button>
+    </div>
+
+    <div class="auth-error" id="authError"></div>
+
+    <div class="field">
+      <label for="authEmail">Email</label>
+      <input type="email" id="authEmail" placeholder="you@example.com" autocomplete="email">
+    </div>
+    <div class="field">
+      <label for="authPassword">Password</label>
+      <input type="password" id="authPassword" placeholder="••••••••" autocomplete="current-password">
+    </div>
+
+    <button class="btn-auth" id="btnAuth" onclick="submitAuth()">Create account</button>
+
+    <div class="auth-switch" id="authSwitch">
+      Already have an account? <a onclick="switchTab('signin')">Sign in</a>
+    </div>
+  </div>
+</div>
 
 <!-- HERO -->
 <section class="hero">
@@ -475,6 +575,13 @@
   <div class="eyebrow">AI-Powered Stem Separation</div>
   <h1>Every song<br>has <span class="accent">hidden layers.</span><br>Hear them all.</h1>
   <p class="hero-sub">Stemify uses deep learning to isolate vocals, bass, drums, guitar, keys, and more — in seconds.</p>
+
+  <!-- AUTH GATE (shown when logged out) -->
+  <div class="auth-gate" id="authGate">
+    <div class="auth-gate-text"><strong>Sign in to start splitting.</strong> Your stems, your history, all in one place.</div>
+    <button class="btn-gate-signin" onclick="openModal('signin')">Sign in</button>
+    <button class="btn-gate-signup" onclick="openModal('signup')">Create free account</button>
+  </div>
 
   <!-- ANIMATED WAVEFORM -->
   <div class="waveform-wrap">
@@ -535,18 +642,18 @@
   <div class="steps">
     <div class="step">
       <div class="step-num">01</div>
-      <h3>Upload your audio</h3>
-      <p>Drag and drop any MP3, WAV, FLAC, or AAC file up to 50MB. No account needed to try.</p>
+      <h3>Create your account</h3>
+      <p>Sign up free in seconds. Your split history and stem counts are saved to your account.</p>
     </div>
     <div class="step">
       <div class="step-num">02</div>
-      <h3>Choose your split</h3>
-      <p>Select 2 to 10 stems depending on how granular you want to go — from basic vocal/instruments to full per-instrument isolation.</p>
+      <h3>Upload & choose your split</h3>
+      <p>Drop any MP3, WAV, FLAC, or AAC file. Select 2 to 10 stems for basic or full per-instrument isolation.</p>
     </div>
     <div class="step">
       <div class="step-num">03</div>
       <h3>Download & use</h3>
-      <p>Preview each stem in the browser, adjust volume, then download individual tracks or the full zip in seconds.</p>
+      <p>Preview each stem in the browser then download individual tracks or the full zip in seconds.</p>
     </div>
   </div>
 </section>
@@ -583,7 +690,7 @@
         <li>10MB file limit</li>
         <li>Standard speed</li>
       </ul>
-      <button class="btn-plan btn-plan-outline">Get started</button>
+      <button class="btn-plan btn-plan-outline" onclick="openModal('signup')">Get started</button>
     </div>
     <div class="plan popular">
       <div class="popular-tag">Most popular</div>
@@ -596,7 +703,7 @@
         <li>Priority processing</li>
         <li>No watermarks</li>
       </ul>
-      <button class="btn-plan btn-plan-fill">Start Pro</button>
+      <button class="btn-plan btn-plan-fill" onclick="openModal('signup')">Start Pro</button>
     </div>
     <div class="plan">
       <div class="plan-name">Studio</div>
@@ -627,7 +734,184 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// ── STEM DEFINITIONS ──
+// ═══════════════════════════════════════
+// AUTH STATE
+// ═══════════════════════════════════════
+let authToken = localStorage.getItem('stemify_token') || null;
+let currentUser = null;
+try { currentUser = JSON.parse(localStorage.getItem('stemify_user') || 'null'); } catch(e) {}
+
+const API_BASE = 'https://stemify-backend-production.up.railway.app';
+
+// ── AUTH API CALLS ──
+async function apiSignUp(email, password) {
+  const res = await fetch(API_BASE + '/api/auth/signup', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password })
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || 'Sign up failed');
+  return data; // { token, user }
+}
+
+async function apiSignIn(email, password) {
+  const res = await fetch(API_BASE + '/api/auth/signin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password })
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || 'Invalid email or password');
+  return data;
+}
+
+function saveSession(token, user) {
+  authToken = token;
+  currentUser = user;
+  localStorage.setItem('stemify_token', token);
+  localStorage.setItem('stemify_user', JSON.stringify(user));
+}
+
+function clearSession() {
+  authToken = null;
+  currentUser = null;
+  localStorage.removeItem('stemify_token');
+  localStorage.removeItem('stemify_user');
+}
+
+// ═══════════════════════════════════════
+// UI STATE: logged-in vs logged-out
+// ═══════════════════════════════════════
+function updateAuthUI() {
+  const loggedOut = document.getElementById('navLoggedOut');
+  const loggedIn  = document.getElementById('navLoggedIn');
+  const authGate  = document.getElementById('authGate');
+  const dropzone  = document.getElementById('dropzone');
+  const splitBtn  = document.getElementById('splitBtn');
+
+  if (authToken && currentUser) {
+    // Nav
+    loggedOut.style.display = 'none';
+    loggedIn.classList.add('show');
+    document.getElementById('navEmail').textContent = currentUser.email;
+    document.getElementById('navStems').textContent = currentUser.stem_count + ' stems used';
+    document.getElementById('navAvatar').textContent = (currentUser.email[0] || '?').toUpperCase();
+    // Upload area
+    authGate.classList.remove('show');
+    dropzone.classList.remove('locked');
+    if (fileSelected) {
+      splitBtn.disabled = false;
+    }
+  } else {
+    // Nav
+    loggedOut.style.display = 'flex';
+    loggedIn.classList.remove('show');
+    // Upload area — show gate, lock dropzone
+    authGate.classList.add('show');
+    dropzone.classList.add('locked');
+    splitBtn.disabled = true;
+  }
+}
+
+function signOut() {
+  clearSession();
+  updateAuthUI();
+  showToast('Signed out. See you next time!');
+}
+
+// ═══════════════════════════════════════
+// MODAL
+// ═══════════════════════════════════════
+let activeTab = 'signup';
+
+function openModal(tab = 'signup') {
+  document.getElementById('authModal').classList.add('show');
+  switchTab(tab);
+  document.getElementById('authEmail').focus();
+}
+
+function closeModal() {
+  document.getElementById('authModal').classList.remove('show');
+  clearAuthError();
+  document.getElementById('authEmail').value = '';
+  document.getElementById('authPassword').value = '';
+}
+
+function switchTab(tab) {
+  activeTab = tab;
+  const isSignup = tab === 'signup';
+
+  document.getElementById('tabSignup').classList.toggle('active', isSignup);
+  document.getElementById('tabSignin').classList.toggle('active', !isSignup);
+  document.getElementById('modalTitle').textContent = isSignup ? 'Create your account' : 'Welcome back';
+  document.getElementById('modalSub').textContent = isSignup
+    ? 'Sign up free — your stem splits are tracked and ready when you return.'
+    : 'Sign in to continue splitting tracks.';
+  document.getElementById('btnAuth').textContent = isSignup ? 'Create account' : 'Sign in';
+  document.getElementById('authSwitch').innerHTML = isSignup
+    ? 'Already have an account? <a onclick="switchTab(\'signin\')">Sign in</a>'
+    : 'New here? <a onclick="switchTab(\'signup\')">Create free account</a>';
+  clearAuthError();
+  // Update password autocomplete hint
+  document.getElementById('authPassword').autocomplete = isSignup ? 'new-password' : 'current-password';
+}
+
+function showAuthError(msg) {
+  const el = document.getElementById('authError');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+function clearAuthError() {
+  document.getElementById('authError').classList.remove('show');
+}
+
+async function submitAuth() {
+  const email    = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  const btn      = document.getElementById('btnAuth');
+
+  if (!email || !password) { showAuthError('Please fill in both fields.'); return; }
+  if (password.length < 6) { showAuthError('Password must be at least 6 characters.'); return; }
+
+  clearAuthError();
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>' + (activeTab === 'signup' ? 'Creating account…' : 'Signing in…');
+
+  try {
+    const data = activeTab === 'signup'
+      ? await apiSignUp(email, password)
+      : await apiSignIn(email, password);
+
+    saveSession(data.token, data.user);
+    closeModal();
+    updateAuthUI();
+    showToast(activeTab === 'signup'
+      ? '🎉 Account created! You\'re all set.'
+      : '👋 Welcome back, ' + data.user.email.split('@')[0] + '!');
+  } catch (err) {
+    showAuthError(err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = activeTab === 'signup' ? 'Create account' : 'Sign in';
+  }
+}
+
+// Allow Enter key in form
+['authEmail','authPassword'].forEach(id => {
+  document.getElementById(id).addEventListener('keydown', e => {
+    if (e.key === 'Enter') submitAuth();
+  });
+});
+
+// Click backdrop to close
+document.getElementById('authModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('authModal')) closeModal();
+});
+
+// ═══════════════════════════════════════
+// STEM DEFINITIONS
+// ═══════════════════════════════════════
 const STEM_DEFS = {
   2: [
     { name: 'Vocals', key: 'Isolated voice', icon: '🎤', color: '#7C3AED' },
@@ -674,11 +958,11 @@ const STEM_DEFS = {
 let selectedStems = 4;
 let fileSelected = false;
 let currentFile = null;
-let audioCtx = null;
-let animFrame = null;
 let isPlaying = {};
 
-// ── CANVAS WAVEFORM ──
+// ═══════════════════════════════════════
+// CANVAS WAVEFORM
+// ═══════════════════════════════════════
 const canvas = document.getElementById('waveCanvas');
 const ctx2d = canvas.getContext('2d');
 
@@ -694,14 +978,11 @@ let phase = 0;
 let stemPhases = Array.from({length: 10}, (_, i) => i * 0.7);
 let splitMode = false;
 
-const STEM_COLORS_RAW = ['#7C3AED','#F59E0B','#EF4444','#00C896','#F97316','#EC4899','#8B5CF6','#00F5FF','#FCD34D','#9D6EF8'];
-
 function drawWave() {
   const w = canvas.offsetWidth, h = canvas.offsetHeight;
   ctx2d.clearRect(0, 0, w, h);
 
   if (!splitMode) {
-    // Single combined waveform
     ctx2d.beginPath();
     const grad = ctx2d.createLinearGradient(0, 0, w, 0);
     grad.addColorStop(0, '#7C3AED');
@@ -722,7 +1003,6 @@ function drawWave() {
     ctx2d.stroke();
     ctx2d.shadowBlur = 0;
   } else {
-    // Stacked split waves
     const count = selectedStems;
     const trackH = h / count;
     STEM_DEFS[selectedStems].forEach((stem, i) => {
@@ -745,8 +1025,6 @@ function drawWave() {
       ctx2d.stroke();
       ctx2d.globalAlpha = 1;
       ctx2d.shadowBlur = 0;
-
-      // Label
       ctx2d.fillStyle = stem.color;
       ctx2d.font = '10px Inter';
       ctx2d.globalAlpha = 0.7;
@@ -756,11 +1034,13 @@ function drawWave() {
   }
 
   phase += 0.03;
-  animFrame = requestAnimationFrame(drawWave);
+  requestAnimationFrame(drawWave);
 }
 drawWave();
 
-// ── CHIPS ──
+// ═══════════════════════════════════════
+// STEM CHIP SELECTOR
+// ═══════════════════════════════════════
 document.getElementById('stemChips').addEventListener('click', e => {
   const chip = e.target.closest('.chip');
   if (!chip) return;
@@ -769,39 +1049,45 @@ document.getElementById('stemChips').addEventListener('click', e => {
   selectedStems = parseInt(chip.dataset.n);
 });
 
-// ── DROPZONE ──
+// ═══════════════════════════════════════
+// DROPZONE
+// ═══════════════════════════════════════
 const dropzone = document.getElementById('dropzone');
 const fileInput = document.getElementById('fileInput');
-const splitBtn = document.getElementById('splitBtn');
+const splitBtn  = document.getElementById('splitBtn');
 
 dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
 dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
 dropzone.addEventListener('drop', e => {
   e.preventDefault(); dropzone.classList.remove('drag-over');
+  if (!authToken) { openModal('signup'); return; }
   const f = e.dataTransfer.files[0];
   if (f) handleFile(f);
 });
-fileInput.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+fileInput.addEventListener('change', e => {
+  if (!authToken) { openModal('signup'); return; }
+  if (e.target.files[0]) handleFile(e.target.files[0]);
+});
 
 function handleFile(file) {
   currentFile = file;
   document.getElementById('dropTitle').textContent = '🎵 ' + file.name;
   fileSelected = true;
-  splitBtn.disabled = false;
+  // Only enable split if logged in
+  splitBtn.disabled = !authToken;
   splitBtn.textContent = 'Split "' + file.name.slice(0,24) + (file.name.length > 24 ? '…' : '') + '"';
 }
 
-// ── API CONFIG ──
-const API_BASE = 'https://stemify-backend-production.up.railway.app';
-
-
+// ═══════════════════════════════════════
+// SPLIT ACTION
+// ═══════════════════════════════════════
 let currentJobId = null;
 let stemUrls = {};
 let audioObjects = {};
 
-// ── SPLIT ACTION ──
 splitBtn.addEventListener('click', () => {
   if (!fileSelected) return;
+  if (!authToken) { openModal('signin'); return; }
   startProcessing();
 });
 
@@ -811,7 +1097,7 @@ async function startProcessing() {
   splitBtn.disabled = true;
   splitMode = true;
 
-  const fill = document.getElementById('progressFill');
+  const fill  = document.getElementById('progressFill');
   const label = document.getElementById('processingLabel');
   fill.style.width = '0%';
 
@@ -828,35 +1114,49 @@ async function startProcessing() {
   }, 800);
 
   try {
-    // Step 1: Upload file and start background job
+    // ── Step 1: Upload with auth header ──
     const formData = new FormData();
     formData.append('file', currentFile);
     formData.append('stems', selectedStems);
 
-    const resp = await fetch(API_BASE + '/api/split', { method: 'POST', body: formData });
+    const resp = await fetch(API_BASE + '/api/split', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + authToken },
+      body: formData
+    });
+
+    if (resp.status === 401) {
+      // Token expired or invalid — force re-login
+      clearSession();
+      updateAuthUI();
+      throw new Error('Session expired. Please sign in again.');
+    }
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({ detail: 'Upload failed' }));
       throw new Error(err.detail || 'HTTP ' + resp.status);
     }
+
     const startData = await resp.json();
     currentJobId = startData.job_id;
 
-    // Step 2: Poll /job/:id every 3 seconds until done or error
+    // Update user usage counts shown in nav
+    if (startData.user) {
+      currentUser = { ...currentUser, ...startData.user };
+      localStorage.setItem('stemify_user', JSON.stringify(currentUser));
+      document.getElementById('navStems').textContent = currentUser.stem_count + ' stems used';
+    }
+
+    // ── Step 2: Poll with auth header ──
     const job = await new Promise((resolve, reject) => {
       const pollIv = setInterval(async () => {
         try {
-          const pollResp = await fetch(API_BASE + '/api/job/' + currentJobId);
+          const pollResp = await fetch(API_BASE + '/api/job/' + currentJobId, {
+            headers: { 'Authorization': 'Bearer ' + authToken }
+          });
           if (!pollResp.ok) { clearInterval(pollIv); reject(new Error('Poll failed')); return; }
           const jobData = await pollResp.json();
-          console.log('Poll result:', jobData.status, jobData);
-          if (jobData.status === 'done') {
-            clearInterval(pollIv);
-            resolve(jobData);
-          } else if (jobData.status === 'error') {
-            clearInterval(pollIv);
-            reject(new Error(jobData.error || 'Processing failed'));
-          }
-          // still 'processing' — keep polling
+          if (jobData.status === 'done') { clearInterval(pollIv); resolve(jobData); }
+          else if (jobData.status === 'error') { clearInterval(pollIv); reject(new Error(jobData.error || 'Processing failed')); }
         } catch(e) { clearInterval(pollIv); reject(e); }
       }, 3000);
     });
@@ -865,8 +1165,6 @@ async function startProcessing() {
     fill.style.width = '100%';
     label.textContent = 'Done!';
     stemUrls = job.stem_urls || {};
-    console.log('Final job:', job);
-    console.log('stemUrls:', stemUrls);
     setTimeout(() => showResults(job), 500);
 
   } catch (err) {
@@ -875,10 +1173,16 @@ async function startProcessing() {
     splitBtn.disabled = false;
     splitMode = false;
     showToast('Error: ' + err.message);
-    console.error(err);
+    // Prompt re-login if auth failed
+    if (err.message.toLowerCase().includes('session expired')) {
+      setTimeout(() => openModal('signin'), 800);
+    }
   }
 }
 
+// ═══════════════════════════════════════
+// RESULTS
+// ═══════════════════════════════════════
 function showResults(data) {
   document.getElementById('processing').classList.remove('show');
   const results = document.getElementById('results');
@@ -887,26 +1191,26 @@ function showResults(data) {
   const stemNames = data.stems || [];
   document.getElementById('resultCount').textContent = stemNames.length + ' stems';
 
-  // Map returned stem names to display info
   const STEM_DISPLAY = {
-    vocals:    { name: 'Vocals',      icon: '🎤', color: '#7C3AED', key: 'Lead & harmonies' },
-    no_vocals: { name: 'Instrumental',icon: '🎸', color: '#00C896', key: 'Everything else' },
-    drums:     { name: 'Drums',       icon: '🥁', color: '#F59E0B', key: 'Kick, snare, hi-hat' },
-    bass:      { name: 'Bass',        icon: '🎸', color: '#EF4444', key: 'Low-end groove' },
-    other:     { name: 'Other',       icon: '🎵', color: '#00F5FF', key: 'Keys, synths, misc' },
-    guitar:    { name: 'Guitar',      icon: '🎸', color: '#F97316', key: 'Riffs & leads' },
-    piano:     { name: 'Piano / Keys',icon: '🎹', color: '#EC4899', key: 'Chords & melody' },
+    vocals:    { name: 'Vocals',       icon: '🎤', color: '#7C3AED', key: 'Lead & harmonies' },
+    no_vocals: { name: 'Instrumental', icon: '🎸', color: '#00C896', key: 'Everything else' },
+    drums:     { name: 'Drums',        icon: '🥁', color: '#F59E0B', key: 'Kick, snare, hi-hat' },
+    bass:      { name: 'Bass',         icon: '🎸', color: '#EF4444', key: 'Low-end groove' },
+    other:     { name: 'Other',        icon: '🎵', color: '#00F5FF', key: 'Keys, synths, misc' },
+    guitar:    { name: 'Guitar',       icon: '🎸', color: '#F97316', key: 'Riffs & leads' },
+    piano:     { name: 'Piano / Keys', icon: '🎹', color: '#EC4899', key: 'Chords & melody' },
   };
 
   const grid = document.getElementById('stemsGrid');
   grid.innerHTML = '';
+  audioObjects = {};
 
   stemNames.forEach((stemKey, i) => {
-    const def = STEM_DISPLAY[stemKey] || { name: stemKey, icon: '🎵', color: '#8B5CF6', key: 'Stem' };
-    // stemUrls keys are like "vocals", dlUrl is like "/download/.../stem/vocals.wav"
+    const def    = STEM_DISPLAY[stemKey] || { name: stemKey, icon: '🎵', color: '#8B5CF6', key: 'Stem' };
     const dlPath = stemUrls[stemKey] || null;
-    const dlUrl = dlPath ? (API_BASE + dlPath) : null;
+    const dlUrl  = dlPath ? (API_BASE + dlPath) : null;
 
+    // Build download URL with auth — use a fetch-based download to pass the token
     const card = document.createElement('div');
     card.className = 'stem-card';
     card.innerHTML = `
@@ -923,26 +1227,45 @@ function showResults(data) {
           <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M3 2l7 4-7 4V2z"/></svg>
           Play
         </button>
-        ${dlUrl ? '<a class="btn-dl" href="' + dlUrl + '" download="' + stemKey + '.wav">⬇</a>' : '<button class="btn-dl" disabled>⬇</button>'}
+        ${dlUrl
+          ? `<button class="btn-dl" onclick="downloadStem('${dlUrl}', '${stemKey}.wav')" title="Download">⬇</button>`
+          : `<button class="btn-dl" disabled>⬇</button>`}
       </div>
     `;
     grid.appendChild(card);
     buildMiniWave(i, def.color);
   });
 
-  // Update download all button
   if (currentJobId) {
-    document.getElementById('dlAllBtn').onclick = () => {
-      window.location.href = `${API_BASE}/api/download/${currentJobId}/zip`;
-    };
+    document.getElementById('dlAllBtn').onclick = () => downloadStem(
+      API_BASE + '/api/download/' + currentJobId + '/zip',
+      'stemify_' + currentJobId + '.zip'
+    );
   }
 
   results.scrollIntoView({ behavior: 'smooth', block: 'start' });
   splitBtn.disabled = false;
 }
 
+// ── Authenticated download helper ──
+async function downloadStem(url, filename) {
+  try {
+    const res = await fetch(url, {
+      headers: authToken ? { 'Authorization': 'Bearer ' + authToken } : {}
+    });
+    if (!res.ok) throw new Error('Download failed (' + res.status + ')');
+    const blob = await res.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  } catch(err) {
+    showToast('Download error: ' + err.message);
+  }
+}
+
 function togglePlay(i, url) {
-  // Stop all others
   Object.keys(audioObjects).forEach(k => {
     if (parseInt(k) !== i && audioObjects[k]) {
       audioObjects[k].pause();
@@ -958,14 +1281,20 @@ function togglePlay(i, url) {
 
   if (isPlaying[i]) {
     if (!audioObjects[i] && url && url !== 'null') {
-      audioObjects[i] = new Audio(url);
-      audioObjects[i].onended = () => {
-        isPlaying[i] = false;
-        btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M3 2l7 4-7 4V2z"/></svg> Play`;
-        btn.style.background = '';
-      };
-    }
-    if (audioObjects[i]) {
+      // Audio with auth header requires fetching blob first
+      fetch(url, { headers: { 'Authorization': 'Bearer ' + authToken } })
+        .then(r => r.blob())
+        .then(blob => {
+          audioObjects[i] = new Audio(URL.createObjectURL(blob));
+          audioObjects[i].onended = () => {
+            isPlaying[i] = false;
+            btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M3 2l7 4-7 4V2z"/></svg> Play`;
+            btn.style.background = '';
+          };
+          audioObjects[i].play().catch(e => showToast('Playback error: ' + e.message));
+        })
+        .catch(e => showToast('Load error: ' + e.message));
+    } else if (audioObjects[i]) {
       audioObjects[i].play().catch(e => showToast('Playback error: ' + e.message));
     }
     btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><rect x="2" y="2" width="3" height="8"/><rect x="7" y="2" width="3" height="8"/></svg> Pause`;
@@ -987,7 +1316,6 @@ function buildMiniWave(i, color) {
     bar.style.cssText = `height:${h}%;background:${color};opacity:0.7;`;
     mw.appendChild(bar);
   }
-  // Animate bars
   setInterval(() => {
     mw.querySelectorAll('.mini-bar').forEach(bar => {
       if (isPlaying[i]) {
@@ -998,12 +1326,14 @@ function buildMiniWave(i, color) {
   }, 100);
 }
 
-
+// ═══════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2800);
+  setTimeout(() => t.classList.remove('show'), 3000);
 }
 
 // ── SMOOTH SCROLL ──
@@ -1013,6 +1343,9 @@ document.querySelectorAll('a[href^="#"]').forEach(a => {
     if (el) { e.preventDefault(); el.scrollIntoView({ behavior: 'smooth' }); }
   });
 });
+
+// ── INIT: restore session on page load ──
+updateAuthUI();
 </script>
 </body>
 </html>
