@@ -3,44 +3,47 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stemify — Split Any Song Into Its Parts</title>
+<title>VocalSplitter — AI Vocal & Stem Separator</title>
+<meta name="description" content="VocalSplitter uses AI to instantly separate vocals, drums, bass, guitar, and more from any song. Free to try. No software needed.">
+<meta name="keywords" content="vocal splitter, stem splitter, remove vocals, isolate vocals, acapella extractor, instrumental maker, AI stem separator, split audio tracks">
+<meta property="og:title" content="VocalSplitter — AI Vocal & Stem Separator">
+<meta property="og:description" content="Separate vocals, drums, bass and more from any song in seconds with AI.">
+<meta property="og:url" content="https://vocalsplitter.app">
+<link rel="canonical" href="https://vocalsplitter.app">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --navy: #0A0E1A;
-    --slate: #1E2435;
-    --slate2: #252B3B;
-    --violet: #7C3AED;
-    --violet-light: #9D6EF8;
-    --cyan: #00F5FF;
-    --white: #F0F4FF;
-    --muted: #8892A4;
-    --border: rgba(124,58,237,0.25);
-    --glow: 0 0 40px rgba(124,58,237,0.4);
-    --red: #EF4444;
+    --navy:   #080C18;
+    --slate:  #131929;
+    --slate2: #1C2233;
+    --violet: #6D28D9;
+    --violet-light: #8B5CF6;
+    --cyan:   #22D3EE;
+    --green:  #10B981;
+    --white:  #EEF2FF;
+    --muted:  #7A8599;
+    --border: rgba(109,40,217,0.22);
+    --glow:   0 0 40px rgba(109,40,217,0.45);
   }
   * { margin:0; padding:0; box-sizing:border-box; }
   body { background:var(--navy); color:var(--white); font-family:'Inter',sans-serif; min-height:100vh; overflow-x:hidden; }
 
   /* ── NAV ── */
-  nav {
-    position:fixed; top:0; width:100%; z-index:100;
-    padding:18px 48px;
-    display:flex; align-items:center; justify-content:space-between;
-    background:rgba(10,14,26,0.85); backdrop-filter:blur(16px);
-    border-bottom:1px solid var(--border);
-  }
-  .logo { font-family:'Space Grotesk',sans-serif; font-size:22px; font-weight:700; background:linear-gradient(135deg,var(--violet-light),var(--cyan)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; letter-spacing:-0.5px; }
-  .logo span { color:var(--cyan); -webkit-text-fill-color:var(--cyan); }
-  nav .nav-links { display:flex; gap:32px; align-items:center; }
+  nav { position:fixed; top:0; width:100%; z-index:100; padding:16px 48px; display:flex; align-items:center; justify-content:space-between; background:rgba(8,12,24,0.88); backdrop-filter:blur(18px); border-bottom:1px solid var(--border); }
+  .logo { font-family:'Space Grotesk',sans-serif; font-size:21px; font-weight:700; letter-spacing:-0.5px; display:flex; align-items:center; gap:8px; }
+  .logo-icon { width:30px; height:30px; background:linear-gradient(135deg,var(--violet),var(--cyan)); border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .logo-icon svg { width:16px; height:16px; fill:none; stroke:#fff; stroke-width:2; }
+  .logo-text { background:linear-gradient(135deg,var(--violet-light),var(--cyan)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+  .logo-text span { -webkit-text-fill-color:var(--cyan); }
+  nav .nav-links { display:flex; gap:28px; align-items:center; }
   nav a { color:var(--muted); text-decoration:none; font-size:14px; font-weight:500; transition:color 0.2s; }
   nav a:hover { color:var(--white); }
   .btn-nav { background:var(--violet); color:#fff; padding:9px 22px; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; border:none; font-family:inherit; transition:background 0.2s,transform 0.1s; }
   .btn-nav:hover { background:var(--violet-light); transform:translateY(-1px); }
   .btn-nav-ghost { background:transparent; color:var(--muted); padding:9px 18px; border-radius:8px; font-size:14px; font-weight:500; cursor:pointer; border:1px solid var(--border); font-family:inherit; transition:all 0.2s; }
   .btn-nav-ghost:hover { border-color:var(--violet-light); color:var(--white); }
-  .user-pill { display:none; align-items:center; gap:10px; background:rgba(124,58,237,0.12); border:1px solid var(--border); border-radius:100px; padding:6px 16px 6px 10px; font-size:13px; }
+  .user-pill { display:none; align-items:center; gap:10px; background:rgba(109,40,217,0.12); border:1px solid var(--border); border-radius:100px; padding:6px 16px 6px 10px; font-size:13px; }
   .user-pill.show { display:flex; }
   .user-avatar { width:26px; height:26px; border-radius:50%; background:linear-gradient(135deg,var(--violet),var(--cyan)); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#fff; flex-shrink:0; }
   .user-email { color:var(--white); font-weight:500; max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -48,39 +51,32 @@
   .btn-signout { background:none; border:none; color:var(--muted); font-size:12px; cursor:pointer; padding:0; font-family:inherit; transition:color 0.2s; }
   .btn-signout:hover { color:var(--white); }
 
-  /* ── MODALS (shared backdrop) ── */
-  .modal-backdrop { position:fixed; inset:0; z-index:500; background:rgba(10,14,26,0.88); backdrop-filter:blur(8px); display:none; align-items:center; justify-content:center; padding:24px; }
+  /* ── MODALS ── */
+  .modal-backdrop { position:fixed; inset:0; z-index:500; background:rgba(8,12,24,0.9); backdrop-filter:blur(10px); display:none; align-items:center; justify-content:center; padding:24px; }
   .modal-backdrop.show { display:flex; }
-  .modal { background:var(--slate); border:1px solid var(--border); border-radius:20px; padding:40px 36px; width:100%; max-width:420px; box-shadow:0 0 80px rgba(124,58,237,0.25); position:relative; }
+  .modal { background:var(--slate); border:1px solid var(--border); border-radius:20px; padding:40px 36px; width:100%; max-width:420px; box-shadow:0 0 80px rgba(109,40,217,0.2); position:relative; }
   .modal-close { position:absolute; top:16px; right:18px; background:none; border:none; color:var(--muted); font-size:22px; cursor:pointer; line-height:1; transition:color 0.2s; }
   .modal-close:hover { color:var(--white); }
-  .modal-logo { font-family:'Space Grotesk',sans-serif; font-size:20px; font-weight:700; background:linear-gradient(135deg,var(--violet-light),var(--cyan)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-bottom:6px; }
+  .modal-logo { font-family:'Space Grotesk',sans-serif; font-size:18px; font-weight:700; background:linear-gradient(135deg,var(--violet-light),var(--cyan)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-bottom:6px; }
   .modal-title { font-family:'Space Grotesk',sans-serif; font-size:24px; font-weight:700; margin-bottom:6px; letter-spacing:-0.5px; }
   .modal-sub { color:var(--muted); font-size:14px; margin-bottom:24px; line-height:1.5; }
-
-  /* Auth tabs */
   .auth-tabs { display:flex; gap:4px; background:var(--slate2); border-radius:10px; padding:4px; margin-bottom:20px; }
   .auth-tab { flex:1; padding:8px; border-radius:7px; border:none; background:none; font-family:inherit; font-size:14px; font-weight:500; color:var(--muted); cursor:pointer; transition:all 0.2s; }
-  .auth-tab.active { background:var(--violet); color:#fff; box-shadow:0 0 16px rgba(124,58,237,0.4); }
-
-  /* Social buttons */
+  .auth-tab.active { background:var(--violet); color:#fff; box-shadow:0 0 16px rgba(109,40,217,0.4); }
   .social-btns { display:flex; flex-direction:column; gap:10px; margin-bottom:18px; }
   .btn-social { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:11px 16px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,0.04); color:var(--white); font-family:inherit; font-size:14px; font-weight:500; cursor:pointer; transition:all 0.2s; }
-  .btn-social:hover { background:rgba(255,255,255,0.08); border-color:rgba(124,58,237,0.5); }
-  .btn-social svg { flex-shrink:0; }
+  .btn-social:hover { background:rgba(255,255,255,0.08); border-color:rgba(109,40,217,0.5); }
   .social-divider { display:flex; align-items:center; gap:12px; margin-bottom:18px; color:var(--muted); font-size:12px; }
   .social-divider::before,.social-divider::after { content:''; flex:1; height:1px; background:var(--border); }
-
-  /* Form fields */
   .field { margin-bottom:14px; }
   .field label { display:block; font-size:13px; font-weight:500; color:var(--muted); margin-bottom:7px; }
   .field input { width:100%; padding:12px 14px; background:var(--navy); border:1px solid var(--border); border-radius:10px; color:var(--white); font-family:inherit; font-size:14px; transition:border-color 0.2s,box-shadow 0.2s; outline:none; }
-  .field input:focus { border-color:var(--violet-light); box-shadow:0 0 0 3px rgba(124,58,237,0.15); }
-  .field input::placeholder { color:#445; }
+  .field input:focus { border-color:var(--violet-light); box-shadow:0 0 0 3px rgba(109,40,217,0.15); }
+  .field input::placeholder { color:#334; }
   .auth-error { background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#f87171; border-radius:8px; padding:10px 14px; font-size:13px; margin-bottom:14px; display:none; }
   .auth-error.show { display:block; }
-  .btn-auth { width:100%; padding:14px; border-radius:11px; border:none; background:linear-gradient(135deg,var(--violet),#5b21b6); color:#fff; font-family:'Space Grotesk',sans-serif; font-size:16px; font-weight:600; cursor:pointer; margin-top:4px; box-shadow:0 0 24px rgba(124,58,237,0.4); transition:all 0.2s; }
-  .btn-auth:hover { transform:translateY(-1px); box-shadow:0 0 40px rgba(124,58,237,0.6); }
+  .btn-auth { width:100%; padding:14px; border-radius:11px; border:none; background:linear-gradient(135deg,var(--violet),#4c1d95); color:#fff; font-family:'Space Grotesk',sans-serif; font-size:16px; font-weight:600; cursor:pointer; margin-top:4px; box-shadow:0 0 24px rgba(109,40,217,0.4); transition:all 0.2s; }
+  .btn-auth:hover { transform:translateY(-1px); box-shadow:0 0 40px rgba(109,40,217,0.6); }
   .btn-auth:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
   .auth-switch { text-align:center; margin-top:16px; font-size:13px; color:var(--muted); }
   .auth-switch a { color:var(--violet-light); text-decoration:none; font-weight:500; cursor:pointer; }
@@ -94,7 +90,7 @@
   .pay-desc { color:var(--muted); font-size:13px; margin-bottom:24px; line-height:1.5; }
   .pay-card-row { display:flex; gap:10px; margin-bottom:14px; }
   .pay-card-row .field { flex:1; margin-bottom:0; }
-  .btn-pay { width:100%; padding:14px; border-radius:11px; border:none; background:linear-gradient(135deg,var(--violet),#5b21b6); color:#fff; font-family:'Space Grotesk',sans-serif; font-size:16px; font-weight:600; cursor:pointer; box-shadow:0 0 24px rgba(124,58,237,0.4); transition:all 0.2s; margin-bottom:10px; }
+  .btn-pay { width:100%; padding:14px; border-radius:11px; border:none; background:linear-gradient(135deg,var(--violet),#4c1d95); color:#fff; font-family:'Space Grotesk',sans-serif; font-size:16px; font-weight:600; cursor:pointer; box-shadow:0 0 24px rgba(109,40,217,0.4); transition:all 0.2s; margin-bottom:10px; }
   .btn-pay:hover { transform:translateY(-1px); }
   .btn-pay:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
   .pay-secure { font-size:11px; color:var(--muted); display:flex; align-items:center; justify-content:center; gap:6px; }
@@ -104,18 +100,26 @@
   /* ── HERO ── */
   .hero { min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:120px 24px 80px; position:relative; overflow:hidden; }
   .hero-bg { position:absolute; inset:0; pointer-events:none; }
-  .orb { position:absolute; border-radius:50%; filter:blur(80px); opacity:0.35; }
-  .orb1 { width:500px; height:500px; background:var(--violet); top:-100px; left:-150px; }
-  .orb2 { width:400px; height:400px; background:#1a0a3e; top:200px; right:-100px; }
-  .orb3 { width:300px; height:300px; background:rgba(0,245,255,0.3); bottom:50px; left:50%; transform:translateX(-50%); }
+  .orb { position:absolute; border-radius:50%; filter:blur(90px); opacity:0.3; }
+  .orb1 { width:560px; height:560px; background:var(--violet); top:-160px; left:-180px; }
+  .orb2 { width:420px; height:420px; background:#1e0a4e; top:180px; right:-120px; }
+  .orb3 { width:320px; height:320px; background:rgba(34,211,238,0.25); bottom:40px; left:50%; transform:translateX(-50%); }
+
+  /* SEO-friendly keyword eyebrow */
   .eyebrow { font-size:12px; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:var(--cyan); margin-bottom:20px; display:flex; align-items:center; gap:10px; }
   .eyebrow::before,.eyebrow::after { content:''; display:block; width:32px; height:1px; background:var(--cyan); }
-  h1 { font-family:'Space Grotesk',sans-serif; font-size:clamp(40px,7vw,82px); font-weight:700; line-height:1.05; text-align:center; letter-spacing:-2px; max-width:800px; }
+
+  h1 { font-family:'Space Grotesk',sans-serif; font-size:clamp(38px,6.5vw,78px); font-weight:700; line-height:1.05; text-align:center; letter-spacing:-2px; max-width:820px; }
   h1 .accent { background:linear-gradient(135deg,var(--violet-light) 0%,var(--cyan) 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-  .hero-sub { margin-top:20px; color:var(--muted); font-size:18px; text-align:center; max-width:520px; line-height:1.65; }
+  .hero-sub { margin-top:20px; color:var(--muted); font-size:18px; text-align:center; max-width:540px; line-height:1.65; }
+
+  /* Stat pills */
+  .stat-row { display:flex; gap:12px; margin-top:28px; flex-wrap:wrap; justify-content:center; }
+  .stat-pill { background:rgba(109,40,217,0.1); border:1px solid var(--border); border-radius:100px; padding:6px 16px; font-size:13px; color:var(--muted); display:flex; align-items:center; gap:6px; }
+  .stat-pill strong { color:var(--white); font-weight:600; }
 
   /* Auth gate */
-  .auth-gate { display:none; margin:28px auto 0; max-width:680px; width:100%; background:rgba(124,58,237,0.08); border:1px solid var(--border); border-radius:14px; padding:16px 20px; align-items:center; gap:14px; flex-wrap:wrap; }
+  .auth-gate { display:none; margin:28px auto 0; max-width:680px; width:100%; background:rgba(109,40,217,0.08); border:1px solid var(--border); border-radius:14px; padding:16px 20px; align-items:center; gap:14px; flex-wrap:wrap; }
   .auth-gate.show { display:flex; }
   .auth-gate-text { font-size:14px; color:var(--muted); flex:1; min-width:180px; }
   .auth-gate-text strong { color:var(--white); }
@@ -125,67 +129,54 @@
   .btn-gate-signin { background:transparent; color:var(--muted); border:1px solid var(--border); }
   .btn-gate-signin:hover { border-color:var(--violet-light); color:var(--white); }
 
-  /* Legal checkbox — lives inside upload-section between chips and split btn */
-  .legal-check {
-    display: none;
-    margin: 20px 0 0;
-    background: rgba(124,58,237,0.07);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 14px 18px;
-    align-items: flex-start;
-    gap: 12px;
-    cursor: pointer;
-    transition: border-color 0.2s;
-  }
-  .legal-check:hover { border-color: var(--violet-light); }
-  .legal-check.show { display: flex; }
-  .legal-check input[type=checkbox] {
-    margin-top: 1px; accent-color: var(--violet);
-    flex-shrink: 0; width: 17px; height: 17px; cursor: pointer;
-  }
-  .legal-check-text { font-size: 12px; color: var(--muted); line-height: 1.65; user-select:none; }
-  .legal-check-text strong { color: var(--white); font-weight: 600; }
-  .legal-check-text a { color: var(--violet-light); text-decoration: none; }
-  .legal-check-text a:hover { text-decoration: underline; }
-
   /* Waveform */
-  .waveform-wrap { position:relative; width:100%; max-width:680px; margin:52px auto 0; height:90px; }
+  .waveform-wrap { position:relative; width:100%; max-width:680px; margin:44px auto 0; height:88px; }
   #waveCanvas { width:100%; height:100%; border-radius:12px; }
 
   /* Upload */
-  .upload-section { width:100%; max-width:680px; margin:32px auto 0; }
-  .dropzone { border:2px dashed var(--border); border-radius:16px; padding:48px 32px; text-align:center; background:rgba(124,58,237,0.06); cursor:pointer; transition:border-color 0.25s,background 0.25s,transform 0.2s; position:relative; }
-  .dropzone:hover,.dropzone.drag-over { border-color:var(--violet-light); background:rgba(124,58,237,0.12); transform:translateY(-2px); }
-  .dropzone.locked { cursor:default; opacity:0.5; pointer-events:none; }
+  .upload-section { width:100%; max-width:680px; margin:28px auto 0; }
+  .dropzone { border:2px dashed var(--border); border-radius:16px; padding:44px 32px; text-align:center; background:rgba(109,40,217,0.05); cursor:pointer; transition:border-color 0.25s,background 0.25s,transform 0.2s; position:relative; }
+  .dropzone:hover,.dropzone.drag-over { border-color:var(--violet-light); background:rgba(109,40,217,0.1); transform:translateY(-2px); }
+  .dropzone.locked { cursor:default; opacity:0.45; pointer-events:none; }
   .dropzone input { position:absolute; inset:0; opacity:0; cursor:pointer; }
-  .drop-icon { width:52px; height:52px; margin:0 auto 16px; background:linear-gradient(135deg,var(--violet),#3b1fa8); border-radius:14px; display:flex; align-items:center; justify-content:center; box-shadow:var(--glow); }
+  .drop-icon { width:52px; height:52px; margin:0 auto 16px; background:linear-gradient(135deg,var(--violet),#3b0764); border-radius:14px; display:flex; align-items:center; justify-content:center; box-shadow:var(--glow); }
   .drop-icon svg { width:26px; height:26px; fill:none; stroke:#fff; stroke-width:1.8; }
   .drop-title { font-family:'Space Grotesk',sans-serif; font-size:18px; font-weight:600; margin-bottom:6px; }
   .drop-sub { color:var(--muted); font-size:14px; }
   .drop-sub span { color:var(--violet-light); font-weight:500; }
-  .formats { margin-top:10px; font-size:12px; color:#556; }
+  .formats { margin-top:10px; font-size:12px; color:#445; }
   .stem-control { display:flex; align-items:center; justify-content:center; gap:12px; margin-top:20px; flex-wrap:wrap; }
   .stem-label { font-size:14px; color:var(--muted); }
   .stem-chips { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
   .chip { padding:6px 16px; border-radius:100px; border:1px solid var(--border); font-size:13px; font-weight:500; cursor:pointer; transition:all 0.18s; background:transparent; color:var(--muted); font-family:inherit; }
   .chip:hover { border-color:var(--violet-light); color:var(--white); }
   .chip.active { background:var(--violet); border-color:var(--violet); color:#fff; }
-  .btn-split { display:block; width:100%; max-width:320px; margin:28px auto 0; padding:16px; border-radius:12px; background:linear-gradient(135deg,var(--violet),#5b21b6); color:#fff; font-family:'Space Grotesk',sans-serif; font-size:17px; font-weight:600; letter-spacing:-0.3px; border:none; cursor:pointer; box-shadow:0 0 30px rgba(124,58,237,0.5); transition:all 0.2s; position:relative; overflow:hidden; }
-  .btn-split:hover { transform:translateY(-2px); box-shadow:0 0 50px rgba(124,58,237,0.7); }
-  .btn-split:disabled { opacity:0.45; cursor:not-allowed; transform:none; }
 
-  /* ── BMAC BANNER ── */
-  .bmac-banner { max-width:680px; margin:40px auto 0; background:linear-gradient(135deg,rgba(255,213,0,0.08),rgba(255,213,0,0.03)); border:1px solid rgba(255,213,0,0.2); border-radius:14px; padding:18px 24px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
-  .bmac-icon { font-size:32px; flex-shrink:0; }
+  /* Legal checkbox — inside upload-section, between chips and split btn */
+  .legal-check { display:none; margin:20px 0 0; background:rgba(109,40,217,0.07); border:1px solid var(--border); border-radius:12px; padding:14px 18px; align-items:flex-start; gap:12px; cursor:pointer; transition:border-color 0.2s; }
+  .legal-check:hover { border-color:var(--violet-light); }
+  .legal-check.show { display:flex; }
+  .legal-check input[type=checkbox] { margin-top:1px; accent-color:var(--violet); flex-shrink:0; width:17px; height:17px; cursor:pointer; }
+  .legal-check-text { font-size:12px; color:var(--muted); line-height:1.65; user-select:none; }
+  .legal-check-text strong { color:var(--white); font-weight:600; }
+  .legal-check-text a { color:var(--violet-light); text-decoration:none; }
+  .legal-check-text a:hover { text-decoration:underline; }
+
+  .btn-split { display:block; width:100%; max-width:320px; margin:22px auto 0; padding:16px; border-radius:12px; background:linear-gradient(135deg,var(--violet),#4c1d95); color:#fff; font-family:'Space Grotesk',sans-serif; font-size:17px; font-weight:600; letter-spacing:-0.3px; border:none; cursor:pointer; box-shadow:0 0 32px rgba(109,40,217,0.5); transition:all 0.2s; position:relative; overflow:hidden; }
+  .btn-split:hover { transform:translateY(-2px); box-shadow:0 0 50px rgba(109,40,217,0.7); }
+  .btn-split:disabled { opacity:0.4; cursor:not-allowed; transform:none; box-shadow:none; }
+
+  /* BMAC */
+  .bmac-banner { max-width:680px; margin:36px auto 0; background:linear-gradient(135deg,rgba(255,213,0,0.07),rgba(255,213,0,0.02)); border:1px solid rgba(255,213,0,0.18); border-radius:14px; padding:18px 24px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+  .bmac-icon { font-size:30px; flex-shrink:0; }
   .bmac-text { flex:1; min-width:180px; }
   .bmac-text strong { display:block; font-size:15px; font-weight:600; color:var(--white); margin-bottom:3px; }
   .bmac-text span { font-size:13px; color:var(--muted); }
-  .btn-bmac { background:#FFDD00; color:#000; padding:10px 20px; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; border:none; font-family:inherit; white-space:nowrap; transition:all 0.2s; flex-shrink:0; }
+  .btn-bmac { background:#FFDD00; color:#000; padding:10px 20px; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; border:none; font-family:inherit; white-space:nowrap; transition:all 0.2s; flex-shrink:0; text-decoration:none; display:inline-block; }
   .btn-bmac:hover { background:#ffe833; transform:translateY(-1px); }
 
   /* Processing */
-  .processing { display:none; text-align:center; margin-top:40px; }
+  .processing { display:none; text-align:center; margin-top:40px; padding:0 24px; }
   .processing.show { display:block; }
   .progress-track { width:100%; max-width:480px; height:4px; background:var(--slate2); border-radius:100px; margin:20px auto 0; overflow:hidden; }
   .progress-fill { height:100%; background:linear-gradient(90deg,var(--violet),var(--cyan)); border-radius:100px; width:0%; transition:width 0.15s ease; }
@@ -206,40 +197,46 @@
   .mini-wave { height:36px; width:100%; border-radius:6px; margin-bottom:12px; display:flex; align-items:center; gap:2px; overflow:hidden; }
   .mini-bar { flex:1; border-radius:2px; }
   .stem-controls { display:flex; gap:8px; }
-  .btn-play { flex:1; padding:8px; border-radius:8px; border:none; background:rgba(124,58,237,0.2); color:var(--violet-light); cursor:pointer; font-size:13px; font-weight:500; font-family:inherit; transition:background 0.18s; display:flex; align-items:center; justify-content:center; gap:6px; }
-  .btn-play:hover { background:rgba(124,58,237,0.4); }
+  .btn-play { flex:1; padding:8px; border-radius:8px; border:none; background:rgba(109,40,217,0.2); color:var(--violet-light); cursor:pointer; font-size:13px; font-weight:500; font-family:inherit; transition:background 0.18s; display:flex; align-items:center; justify-content:center; gap:6px; }
+  .btn-play:hover { background:rgba(109,40,217,0.4); }
   .btn-dl { padding:8px 14px; border-radius:8px; border:1px solid var(--border); background:transparent; color:var(--muted); cursor:pointer; font-size:13px; font-family:inherit; transition:all 0.18s; }
   .btn-dl:hover { border-color:var(--cyan); color:var(--cyan); }
   .btn-dl-all { display:block; width:100%; max-width:320px; margin:28px auto 0; padding:14px; border-radius:12px; border:1px solid var(--violet); background:transparent; color:var(--violet-light); font-family:'Space Grotesk',sans-serif; font-size:15px; font-weight:600; cursor:pointer; transition:all 0.2s; }
-  .btn-dl-all:hover { background:rgba(124,58,237,0.15); }
-
-  /* BMAC in results */
-  .bmac-results { max-width:480px; margin:40px auto 0; background:linear-gradient(135deg,rgba(255,213,0,0.08),rgba(255,213,0,0.03)); border:1px solid rgba(255,213,0,0.2); border-radius:14px; padding:20px 24px; text-align:center; }
+  .btn-dl-all:hover { background:rgba(109,40,217,0.15); }
+  .bmac-results { max-width:480px; margin:40px auto 0; background:linear-gradient(135deg,rgba(255,213,0,0.07),rgba(255,213,0,0.02)); border:1px solid rgba(255,213,0,0.18); border-radius:14px; padding:20px 24px; text-align:center; }
   .bmac-results strong { display:block; font-size:16px; font-weight:600; margin-bottom:6px; }
   .bmac-results span { font-size:13px; color:var(--muted); display:block; margin-bottom:14px; }
 
   /* How it works */
   .how { max-width:900px; margin:120px auto 0; padding:0 24px; }
   .section-eyebrow { text-align:center; font-size:11px; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:var(--cyan); margin-bottom:14px; }
-  .section-title { font-family:'Space Grotesk',sans-serif; font-size:clamp(28px,4vw,42px); font-weight:700; text-align:center; letter-spacing:-1px; margin-bottom:60px; }
+  .section-title { font-family:'Space Grotesk',sans-serif; font-size:clamp(26px,4vw,40px); font-weight:700; text-align:center; letter-spacing:-1px; margin-bottom:56px; }
   .steps { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:24px; }
   .step { background:var(--slate); border:1px solid var(--border); border-radius:16px; padding:28px 24px; }
-  .step-num { font-family:'Space Grotesk',sans-serif; font-size:48px; font-weight:700; color:rgba(124,58,237,0.2); line-height:1; margin-bottom:16px; }
+  .step-num { font-family:'Space Grotesk',sans-serif; font-size:44px; font-weight:700; color:rgba(109,40,217,0.2); line-height:1; margin-bottom:16px; }
   .step h3 { font-family:'Space Grotesk',sans-serif; font-size:16px; font-weight:600; margin-bottom:8px; }
-  .step p { font-size:14px; color:var(--muted); line-height:1.6; }
+  .step p { font-size:14px; color:var(--muted); line-height:1.65; }
+
+  /* Use cases */
+  .usecases { max-width:900px; margin:100px auto 0; padding:0 24px; }
+  .uc-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:14px; margin-top:40px; }
+  .uc-card { background:var(--slate); border:1px solid var(--border); border-radius:14px; padding:20px 18px; }
+  .uc-icon { font-size:24px; margin-bottom:10px; }
+  .uc-title { font-family:'Space Grotesk',sans-serif; font-size:14px; font-weight:600; margin-bottom:5px; }
+  .uc-desc { font-size:12px; color:var(--muted); line-height:1.55; }
 
   /* Stems showcase */
   .showcase { max-width:900px; margin:100px auto 0; padding:0 24px; }
-  .stems-list { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:12px; margin-top:40px; }
-  .stem-badge { display:flex; align-items:center; gap:10px; background:var(--slate); border:1px solid var(--border); border-radius:12px; padding:14px 16px; font-size:14px; font-weight:500; }
-  .stem-badge span { font-size:20px; }
+  .stems-list { display:grid; grid-template-columns:repeat(auto-fill,minmax(155px,1fr)); gap:10px; margin-top:40px; }
+  .stem-badge { display:flex; align-items:center; gap:10px; background:var(--slate); border:1px solid var(--border); border-radius:12px; padding:13px 15px; font-size:13px; font-weight:500; }
+  .stem-badge span { font-size:19px; }
 
   /* Pricing */
-  .pricing { max-width:800px; margin:100px auto 0; padding:0 24px; }
+  .pricing { max-width:820px; margin:100px auto 0; padding:0 24px; }
   .plans { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:20px; margin-top:40px; }
   .plan { background:var(--slate); border:1px solid var(--border); border-radius:20px; padding:32px 24px; text-align:center; position:relative; }
   .plan.popular { border-color:var(--violet); box-shadow:var(--glow); }
-  .popular-tag { position:absolute; top:-12px; left:50%; transform:translateX(-50%); background:var(--violet); color:#fff; font-size:11px; font-weight:700; letter-spacing:1px; padding:4px 14px; border-radius:100px; text-transform:uppercase; }
+  .popular-tag { position:absolute; top:-12px; left:50%; transform:translateX(-50%); background:var(--violet); color:#fff; font-size:11px; font-weight:700; letter-spacing:1px; padding:4px 14px; border-radius:100px; text-transform:uppercase; white-space:nowrap; }
   .plan-name { font-family:'Space Grotesk',sans-serif; font-size:15px; font-weight:600; color:var(--muted); margin-bottom:12px; }
   .plan-price { font-family:'Space Grotesk',sans-serif; font-size:40px; font-weight:700; letter-spacing:-2px; }
   .plan-price sup { font-size:20px; vertical-align:top; margin-top:8px; display:inline-block; }
@@ -250,13 +247,23 @@
   .btn-plan { width:100%; padding:12px; border-radius:10px; font-family:'Space Grotesk',sans-serif; font-size:14px; font-weight:600; cursor:pointer; transition:all 0.2s; }
   .btn-plan-outline { background:transparent; border:1px solid var(--border); color:var(--white); }
   .btn-plan-outline:hover { border-color:var(--violet-light); }
-  .btn-plan-fill { background:linear-gradient(135deg,var(--violet),#5b21b6); border:none; color:#fff; box-shadow:0 0 20px rgba(124,58,237,0.4); }
+  .btn-plan-fill { background:linear-gradient(135deg,var(--violet),#4c1d95); border:none; color:#fff; box-shadow:0 0 20px rgba(109,40,217,0.4); }
   .btn-plan-fill:hover { transform:translateY(-1px); }
 
-  /* ── LEGAL DISCLAIMER SECTION ── */
+  /* FAQ — good for SEO */
+  .faq { max-width:720px; margin:100px auto 0; padding:0 24px; }
+  .faq-item { border-bottom:1px solid var(--border); padding:20px 0; }
+  .faq-q { font-family:'Space Grotesk',sans-serif; font-size:16px; font-weight:600; cursor:pointer; display:flex; justify-content:space-between; align-items:center; gap:16px; }
+  .faq-q:hover { color:var(--violet-light); }
+  .faq-chevron { flex-shrink:0; transition:transform 0.25s; color:var(--muted); font-size:18px; }
+  .faq-a { font-size:14px; color:var(--muted); line-height:1.7; max-height:0; overflow:hidden; transition:max-height 0.3s ease, padding 0.3s; }
+  .faq-item.open .faq-a { max-height:200px; padding-top:12px; }
+  .faq-item.open .faq-chevron { transform:rotate(180deg); }
+
+  /* Legal disclaimer */
   .legal-section { max-width:760px; margin:80px auto 0; padding:0 24px; }
-  .legal-box { background:rgba(239,68,68,0.05); border:1px solid rgba(239,68,68,0.18); border-radius:16px; padding:28px 32px; }
-  .legal-box h3 { font-family:'Space Grotesk',sans-serif; font-size:16px; font-weight:600; color:#f87171; margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+  .legal-box { background:rgba(239,68,68,0.04); border:1px solid rgba(239,68,68,0.15); border-radius:16px; padding:28px 32px; }
+  .legal-box h3 { font-family:'Space Grotesk',sans-serif; font-size:15px; font-weight:600; color:#f87171; margin-bottom:14px; display:flex; align-items:center; gap:8px; }
   .legal-box p { font-size:13px; color:var(--muted); line-height:1.75; margin-bottom:10px; }
   .legal-box p:last-child { margin-bottom:0; }
   .legal-box strong { color:#ccc; }
@@ -266,6 +273,7 @@
   footer a { color:var(--muted); text-decoration:none; }
   footer a:hover { color:var(--white); }
   .footer-links { display:flex; gap:24px; }
+  .footer-logo { font-family:'Space Grotesk',sans-serif; font-size:18px; font-weight:700; background:linear-gradient(135deg,var(--violet-light),var(--cyan)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
 
   /* Toast */
   .toast { position:fixed; bottom:24px; right:24px; background:var(--slate); border:1px solid var(--violet); padding:12px 20px; border-radius:10px; font-size:14px; color:var(--white); transform:translateY(80px); opacity:0; transition:all 0.3s; z-index:999; max-width:320px; }
@@ -280,6 +288,7 @@
     .nav-links { display:none; }
     footer { flex-direction:column; padding:32px 20px; }
     .modal { padding:28px 20px; }
+    .bmac-banner { flex-direction:column; align-items:flex-start; }
   }
 </style>
 </head>
@@ -287,20 +296,26 @@
 
 <!-- NAV -->
 <nav>
-  <div class="logo">Stem<span>ify</span></div>
+  <div class="logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM21 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/></svg>
+    </div>
+    <span class="logo-text">Vocal<span>Splitter</span></span>
+  </div>
   <div class="nav-links">
     <a href="#how">How it works</a>
-    <a href="#stems">Stems</a>
+    <a href="#usecases">Use cases</a>
     <a href="#pricing">Pricing</a>
+    <a href="#faq">FAQ</a>
     <div id="navLoggedOut" style="display:flex;gap:8px;align-items:center;">
       <button class="btn-nav-ghost" onclick="openModal('signin')">Sign in</button>
-      <button class="btn-nav" onclick="openModal('signup')">Sign up free</button>
+      <button class="btn-nav" onclick="openModal('signup')">Try free</button>
     </div>
     <div class="user-pill" id="navLoggedIn">
       <div class="user-avatar" id="navAvatar">?</div>
       <div>
         <div class="user-email" id="navEmail"></div>
-        <div class="user-stems" id="navStems">0 stems used</div>
+        <div class="user-stems" id="navStems">0 stems split</div>
       </div>
       <button class="btn-signout" onclick="signOut()" title="Sign out">✕</button>
     </div>
@@ -311,16 +326,13 @@
 <div class="modal-backdrop" id="authModal">
   <div class="modal">
     <button class="modal-close" onclick="closeModal()">×</button>
-    <div class="modal-logo">Stemify</div>
+    <div class="modal-logo">VocalSplitter</div>
     <div class="modal-title" id="modalTitle">Create your account</div>
-    <div class="modal-sub" id="modalSub">Sign up free — splits and stem counts saved to your account.</div>
-
+    <div class="modal-sub" id="modalSub">Free to try — splits and usage tracked to your account.</div>
     <div class="auth-tabs">
       <button class="auth-tab active" id="tabSignup" onclick="switchTab('signup')">Sign up</button>
       <button class="auth-tab" id="tabSignin" onclick="switchTab('signin')">Sign in</button>
     </div>
-
-    <!-- Social buttons -->
     <div class="social-btns">
       <button class="btn-social" onclick="socialAuth('google')">
         <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615Z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18Z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332Z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58Z"/></svg>
@@ -331,22 +343,12 @@
         Continue with Apple
       </button>
     </div>
-
     <div class="social-divider">or continue with email</div>
-
     <div class="auth-error" id="authError"></div>
-    <div class="field">
-      <label for="authEmail">Email</label>
-      <input type="email" id="authEmail" placeholder="you@example.com" autocomplete="email">
-    </div>
-    <div class="field">
-      <label for="authPassword">Password</label>
-      <input type="password" id="authPassword" placeholder="••••••••">
-    </div>
+    <div class="field"><label for="authEmail">Email</label><input type="email" id="authEmail" placeholder="you@example.com" autocomplete="email"></div>
+    <div class="field"><label for="authPassword">Password</label><input type="password" id="authPassword" placeholder="••••••••"></div>
     <button class="btn-auth" id="btnAuth" onclick="submitAuth()">Create account</button>
-    <div class="auth-switch" id="authSwitch">
-      Already have an account? <a onclick="switchTab('signin')">Sign in</a>
-    </div>
+    <div class="auth-switch" id="authSwitch">Already have an account? <a onclick="switchTab('signin')">Sign in</a></div>
   </div>
 </div>
 
@@ -357,17 +359,8 @@
     <div class="pay-icon" id="payIcon">🎤</div>
     <div class="pay-stem-name" id="payStemName">Vocals</div>
     <div class="pay-price">$3<sub>/stem</sub></div>
-    <div class="pay-desc">Download this isolated stem in full quality WAV.<br>One-time payment — no subscription needed.</div>
-
-    <!-- 
-      TODO: Replace this form with your Stripe integration.
-      Steps:
-        1. npm install @stripe/stripe-js in your frontend
-        2. Create a /api/payment/create-intent endpoint in FastAPI
-        3. Use Stripe Elements to mount a real card field here
-        4. On success, call the download function with the token
-      For now this shows a UI placeholder.
-    -->
+    <div class="pay-desc">Download this isolated stem in full quality WAV.<br>One-time — no subscription required.</div>
+    <!-- TODO: Replace with Stripe Elements — see comment in JS -->
     <div class="field"><label>Card number</label><input type="text" placeholder="1234 5678 9012 3456" maxlength="19" id="payCardNum" oninput="fmtCard(this)"></div>
     <div class="pay-card-row">
       <div class="field"><label>Expiry</label><input type="text" placeholder="MM/YY" maxlength="5" id="payExpiry" oninput="fmtExpiry(this)"></div>
@@ -384,13 +377,19 @@
   <div class="hero-bg">
     <div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div>
   </div>
-  <div class="eyebrow">AI-Powered Stem Separation</div>
-  <h1>Every song<br>has <span class="accent">hidden layers.</span><br>Hear them all.</h1>
-  <p class="hero-sub">Stemify uses deep learning to isolate vocals, bass, drums, guitar, keys, and more — in seconds.</p>
 
-  <!-- Auth gate (logged out only) -->
+  <div class="eyebrow">Free AI Vocal &amp; Stem Splitter</div>
+  <h1>Separate <span class="accent">vocals, drums,<br>bass</span> from any song.</h1>
+  <p class="hero-sub">VocalSplitter uses AI to isolate every instrument in seconds. Upload any audio file — preview free, download for $3.</p>
+
+  <div class="stat-row">
+    <div class="stat-pill"><strong>2–10</strong> stems per track</div>
+    <div class="stat-pill"><strong>MP3, WAV, FLAC</strong> supported</div>
+    <div class="stat-pill"><strong>No software</strong> to install</div>
+  </div>
+
   <div class="auth-gate" id="authGate">
-    <div class="auth-gate-text"><strong>Sign in to start splitting.</strong> Your stems and history, all in one place.</div>
+    <div class="auth-gate-text"><strong>Sign in to start splitting.</strong> Free account — your splits and history in one place.</div>
     <button class="btn-gate btn-gate-signin" onclick="openModal('signin')">Sign in</button>
     <button class="btn-gate btn-gate-signup" onclick="openModal('signup')">Create free account</button>
   </div>
@@ -407,6 +406,7 @@
       <div class="drop-sub">or <span>browse to upload</span></div>
       <div class="formats">MP3 · WAV · FLAC · AAC · OGG · M4A — up to 50MB</div>
     </div>
+
     <div class="stem-control">
       <span class="stem-label">Split into</span>
       <div class="stem-chips" id="stemChips">
@@ -417,28 +417,24 @@
         <button class="chip" data-n="10">10 stems</button>
       </div>
     </div>
-    <!-- Legal acknowledgement — only visible when logged in -->
+
     <label class="legal-check" id="legalCheck" for="legalCb">
       <input type="checkbox" id="legalCb" onchange="updateSplitBtn()">
       <div class="legal-check-text">
-        <strong>I confirm I have the right to process this audio.</strong> I understand that splitting copyrighted material without authorisation may violate copyright law, and I accept Stemify's <a href="#legal" onclick="event.stopPropagation()">Terms of Use</a>.
+        <strong>I confirm I have the right to process this audio.</strong> I understand splitting copyrighted material without authorisation may violate copyright law, and I accept VocalSplitter's <a href="#legal" onclick="event.stopPropagation()">Terms of Use</a>.
       </div>
     </label>
 
     <button class="btn-split" id="splitBtn" disabled>Split Track</button>
   </div>
 
-  <!-- Buy Me a Coffee banner -->
-  <!-- TODO: Replace YOUR_BMAC_USERNAME with your actual Buy Me a Coffee username -->
   <div class="bmac-banner">
     <div class="bmac-icon">☕</div>
     <div class="bmac-text">
-      <strong>Stemify is free to try — keep it alive!</strong>
-      <span>If Stemify saved you time, buy us a coffee. It funds the servers that split your tracks.</span>
+      <strong>VocalSplitter is free to try — keep it running!</strong>
+      <span>GPU time isn't cheap. A coffee helps keep the servers splitting.</span>
     </div>
-    <a href="https://www.buymeacoffee.com/YOUR_BMAC_USERNAME" target="_blank" rel="noopener">
-      <button class="btn-bmac">☕ Buy us a coffee</button>
-    </a>
+    <a href="https://www.buymeacoffee.com/gazitr" target="_blank" rel="noopener" class="btn-bmac">☕ Buy us a coffee</a>
   </div>
 </section>
 
@@ -446,36 +442,57 @@
 <div class="processing" id="processing">
   <div style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:600;">Splitting your track…</div>
   <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
-  <div class="processing-label" id="processingLabel">Analysing frequencies…</div>
+  <div class="processing-label" id="processingLabel">Analysing audio…</div>
   <button onclick="cancelProcessing()" style="margin-top:18px;background:none;border:1px solid var(--border);color:var(--muted);padding:8px 20px;border-radius:8px;font-family:inherit;font-size:13px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.borderColor='var(--violet-light)';this.style.color='var(--white)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">Cancel</button>
 </div>
 
 <!-- RESULTS -->
 <div class="results" id="results">
-  <div class="results-title">Your stems are ready — <span id="resultCount"></span></div>
+  <div class="results-title">Stems ready — <span id="resultCount"></span></div>
   <div class="stems-grid" id="stemsGrid"></div>
   <button class="btn-dl-all" id="dlAllBtn">⬇ Download all stems (.zip) — $3</button>
-
-  <!-- BMAC in results -->
-  <!-- TODO: Replace YOUR_BMAC_USERNAME -->
   <div class="bmac-results">
-    <div style="font-size:32px;margin-bottom:10px;">☕</div>
-    <strong>Stems sound great? Support Stemify!</strong>
-    <span>Your coffee keeps the AI running and the servers paid.</span>
-    <a href="https://www.buymeacoffee.com/YOUR_BMAC_USERNAME" target="_blank" rel="noopener">
-      <button class="btn-bmac">Buy us a coffee</button>
-    </a>
+    <div style="font-size:28px;margin-bottom:8px;">☕</div>
+    <strong>Sounds good? Support VocalSplitter!</strong>
+    <span>A coffee keeps the AI running and the servers paid.</span>
+    <a href="https://www.buymeacoffee.com/gazitr" target="_blank" rel="noopener" class="btn-bmac">Buy us a coffee</a>
   </div>
 </div>
 
 <!-- HOW IT WORKS -->
 <section class="how" id="how">
-  <div class="section-eyebrow">The process</div>
-  <div class="section-title">Three steps, pure stems</div>
+  <div class="section-eyebrow">How it works</div>
+  <div class="section-title">Split any song in three steps</div>
   <div class="steps">
-    <div class="step"><div class="step-num">01</div><h3>Create your account</h3><p>Sign up free in seconds using email, Google, or Apple. Your split history and stem counts are saved to your account.</p></div>
-    <div class="step"><div class="step-num">02</div><h3>Upload & choose your split</h3><p>Drop any MP3, WAV, FLAC, or AAC file. Select 2 to 10 stems for basic or full per-instrument isolation.</p></div>
-    <div class="step"><div class="step-num">03</div><h3>Preview & download</h3><p>Listen to each stem in the browser, then pay $3 to download the track or zip — or support us with a coffee.</p></div>
+    <div class="step">
+      <div class="step-num">01</div>
+      <h3>Create a free account</h3>
+      <p>Sign up in seconds with email, Google, or Apple. Your split history and usage are saved to your account.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">02</div>
+      <h3>Upload &amp; choose stems</h3>
+      <p>Drop any MP3, WAV, or FLAC file up to 50MB. Pick 2–10 stems: from a simple vocal/instrumental split to full per-instrument isolation.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">03</div>
+      <h3>Preview free, download for $3</h3>
+      <p>Listen to every stem in your browser at no cost. Pay $3 to download an individual stem or the full ZIP.</p>
+    </div>
+  </div>
+</section>
+
+<!-- USE CASES -->
+<section class="usecases" id="usecases">
+  <div class="section-eyebrow">Use cases</div>
+  <div class="section-title">Who uses VocalSplitter</div>
+  <div class="uc-grid">
+    <div class="uc-card"><div class="uc-icon">🎛️</div><div class="uc-title">Producers &amp; Remixers</div><div class="uc-desc">Pull isolated stems for remixes, edits, and mashups without hunting for official multitracks.</div></div>
+    <div class="uc-card"><div class="uc-icon">🎤</div><div class="uc-title">Singers &amp; Vocalists</div><div class="uc-desc">Extract an acapella or create a karaoke backing track from any song instantly.</div></div>
+    <div class="uc-card"><div class="uc-icon">🎸</div><div class="uc-title">Musicians Learning</div><div class="uc-desc">Isolate one instrument at a time to learn parts by ear — mute the vocals, slow it down, practice.</div></div>
+    <div class="uc-card"><div class="uc-icon">🎬</div><div class="uc-title">Content Creators</div><div class="uc-desc">Strip vocals or specific instruments for use in videos, reels, and shorts without copyright issues.</div></div>
+    <div class="uc-card"><div class="uc-icon">🥁</div><div class="uc-title">Drummers</div><div class="uc-desc">Extract clean drum stems for sampling, transcription, or building backing tracks.</div></div>
+    <div class="uc-card"><div class="uc-icon">🎓</div><div class="uc-title">Music Educators</div><div class="uc-desc">Isolate individual parts for classroom analysis, ear training, and arrangement study.</div></div>
   </div>
 </section>
 
@@ -499,14 +516,17 @@
 
 <!-- PRICING -->
 <section class="pricing" id="pricing">
-  <div class="section-eyebrow">Simple pricing</div>
-  <div class="section-title">Start free, go pro</div>
+  <div class="section-eyebrow">Pricing</div>
+  <div class="section-title">Free to preview, pay only to download</div>
   <div class="plans">
     <div class="plan">
       <div class="plan-name">Free</div>
       <div class="plan-price"><sup>$</sup>0<sub>/mo</sub></div>
       <ul class="plan-features">
-        <li>3 splits per day</li><li>Up to 4 stems</li><li>Preview all stems</li><li>$3 per stem download</li>
+        <li>3 splits per day</li>
+        <li>Up to 4 stems</li>
+        <li>Preview all stems free</li>
+        <li>$3 per stem download</li>
       </ul>
       <button class="btn-plan btn-plan-outline" onclick="openModal('signup')">Get started</button>
     </div>
@@ -515,7 +535,11 @@
       <div class="plan-name">Pro</div>
       <div class="plan-price"><sup>$</sup>12<sub>/mo</sub></div>
       <ul class="plan-features">
-        <li>Unlimited splits</li><li>Up to 10 stems</li><li>50MB file limit</li><li>Free stem downloads</li><li>Priority processing</li>
+        <li>Unlimited splits</li>
+        <li>Up to 10 stems</li>
+        <li>50MB file limit</li>
+        <li>Free stem downloads</li>
+        <li>Priority processing</li>
       </ul>
       <button class="btn-plan btn-plan-fill" onclick="openModal('signup')">Start Pro</button>
     </div>
@@ -523,109 +547,121 @@
       <div class="plan-name">Studio</div>
       <div class="plan-price"><sup>$</sup>39<sub>/mo</sub></div>
       <ul class="plan-features">
-        <li>Everything in Pro</li><li>200MB file limit</li><li>API access</li><li>Batch uploads</li><li>Priority support</li>
+        <li>Everything in Pro</li>
+        <li>200MB file limit</li>
+        <li>API access</li>
+        <li>Batch uploads</li>
+        <li>Priority support</li>
       </ul>
       <button class="btn-plan btn-plan-outline">Go Studio</button>
     </div>
   </div>
 </section>
 
-<!-- ── LEGAL DISCLAIMER ── -->
+<!-- FAQ — schema-friendly for SEO -->
+<section class="faq" id="faq">
+  <div class="section-eyebrow">FAQ</div>
+  <div class="section-title">Common questions</div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">What is a vocal splitter? <span class="faq-chevron">›</span></div>
+    <div class="faq-a">A vocal splitter (also called a stem splitter or vocal remover) is an AI tool that separates the individual components of a mixed song — vocals, drums, bass, guitar, etc. — into separate audio files called stems. VocalSplitter uses the open-source Demucs model to do this entirely in the cloud.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">How do I remove vocals from a song? <span class="faq-chevron">›</span></div>
+    <div class="faq-a">Upload your audio file, choose "2 stems", and VocalSplitter will produce a Vocals stem and an Instrumental stem. Download the Instrumental stem to get a version of the song with vocals removed — perfect for karaoke or remixing.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">Is it free to use? <span class="faq-chevron">›</span></div>
+    <div class="faq-a">Previewing your stems is always free. You can listen to every isolated track in your browser before deciding. Downloading a stem costs $3 per file, or upgrade to Pro ($12/mo) for unlimited free downloads.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">What audio formats are supported? <span class="faq-chevron">›</span></div>
+    <div class="faq-a">VocalSplitter supports MP3, WAV, FLAC, AAC, OGG, and M4A files up to 50MB on the Free plan and 200MB on Studio.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">Is splitting copyrighted music legal? <span class="faq-chevron">›</span></div>
+    <div class="faq-a">VocalSplitter is a technical tool. You are responsible for ensuring you have the rights to process any file you upload. Splitting music you own, music under Creative Commons licence, or your own recordings is generally fine. Distributing stems from commercially released copyrighted songs without permission may infringe copyright law. See our full legal notice below.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">How long does processing take? <span class="faq-chevron">›</span></div>
+    <div class="faq-a">Most 3–5 minute tracks finish in 30–90 seconds. Longer files or more stems (6–10) may take 2–5 minutes. The AI runs on GPU servers so you don't need any special hardware.</div>
+  </div>
+</section>
+
+<!-- LEGAL DISCLAIMER -->
 <section class="legal-section" id="legal">
   <div class="legal-box">
-    <h3>⚠️ Copyright & Legal Notice</h3>
-    <p>
-      Stemify is a <strong>technical tool</strong> for audio source separation. It does not grant any rights to reproduce, distribute, or use copyrighted music. <strong>You are solely responsible</strong> for ensuring you have the legal right to process any audio file you upload.
-    </p>
-    <p>
-      Uploading, splitting, or downloading stems from <strong>commercially released, copyrighted music without explicit authorisation</strong> from the rights holders (artists, labels, publishers) may constitute copyright infringement under applicable law, including the DMCA (US), EU Copyright Directive, and equivalent legislation in your jurisdiction.
-    </p>
-    <p>
-      Permitted use cases include: <strong>your own original recordings</strong>, music licensed under Creative Commons or similar open licences, and content you have written authorisation to process. Stemify complies with all valid takedown notices and reserves the right to suspend accounts engaged in infringing activity.
-    </p>
-    <p>
-      By using Stemify you agree that <strong>Stemify bears no liability</strong> for how you use the stems produced. For questions contact <a href="mailto:legal@stemify.app" style="color:var(--violet-light)">legal@stemify.app</a>.
-    </p>
+    <h3>⚠️ Copyright &amp; Legal Notice</h3>
+    <p>VocalSplitter is a <strong>technical tool</strong> for audio source separation. It does not grant any rights to reproduce, distribute, or use copyrighted music. <strong>You are solely responsible</strong> for ensuring you have the legal right to process any audio file you upload.</p>
+    <p>Uploading, splitting, or downloading stems from <strong>commercially released, copyrighted music without explicit authorisation</strong> from the rights holders may constitute copyright infringement under applicable law, including the DMCA (US), EU Copyright Directive, and equivalent laws in your jurisdiction.</p>
+    <p>Permitted uses include: <strong>your own original recordings</strong>, music under Creative Commons or open licences, and content you have written authorisation to process. VocalSplitter complies with all valid takedown notices and reserves the right to suspend accounts engaged in infringing activity.</p>
+    <p>By using VocalSplitter you agree that <strong>VocalSplitter bears no liability</strong> for how stems are used. Questions: <a href="mailto:legal@vocalsplitter.app" style="color:var(--violet-light)">legal@vocalsplitter.app</a></p>
   </div>
 </section>
 
 <footer>
-  <div class="logo">Stem<span>ify</span></div>
+  <div class="footer-logo">VocalSplitter</div>
   <div class="footer-links">
     <a href="#legal">Legal</a>
     <a href="#">Privacy</a>
     <a href="#">Terms</a>
     <a href="#">API</a>
-    <a href="#">Contact</a>
+    <a href="mailto:hello@vocalsplitter.app">Contact</a>
   </div>
-  <div>© 2026 Stemify. All rights reserved.</div>
+  <div>© 2026 VocalSplitter. All rights reserved.</div>
 </footer>
 
 <div class="toast" id="toast"></div>
 
 <script>
 // ═══════════════════════════════════════════════════════
-// CONFIG
-// TODO: Replace with your actual backend URL
+// CONFIG — update API_BASE when you deploy
 const API_BASE = 'https://stemify-backend-production.up.railway.app';
-// TODO: Replace with your Stripe publishable key when integrating payments
+// TODO: set your Stripe publishable key here when integrating payments
 // const STRIPE_PK = 'pk_live_...';
 // ═══════════════════════════════════════════════════════
 
 // ── AUTH STATE ──
-let authToken = localStorage.getItem('stemify_token') || null;
+let authToken = localStorage.getItem('vs_token') || null;
 let currentUser = null;
-try { currentUser = JSON.parse(localStorage.getItem('stemify_user') || 'null'); } catch(e) {}
+try { currentUser = JSON.parse(localStorage.getItem('vs_user') || 'null'); } catch(e) {}
 
 // ── AUTH API ──
 async function apiSignUp(email, password) {
-  const res = await fetch(API_BASE + '/api/auth/signup', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ email, password })
-  });
+  const res = await fetch(API_BASE + '/api/auth/signup', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email,password}) });
   const data = await res.json();
   if (!res.ok) throw new Error(data.detail || 'Sign up failed');
   return data;
 }
 async function apiSignIn(email, password) {
-  const res = await fetch(API_BASE + '/api/auth/signin', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ email, password })
-  });
+  const res = await fetch(API_BASE + '/api/auth/signin', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email,password}) });
   const data = await res.json();
   if (!res.ok) throw new Error(data.detail || 'Invalid email or password');
   return data;
 }
 function saveSession(token, user) {
   authToken = token; currentUser = user;
-  localStorage.setItem('stemify_token', token);
-  localStorage.setItem('stemify_user', JSON.stringify(user));
+  localStorage.setItem('vs_token', token);
+  localStorage.setItem('vs_user', JSON.stringify(user));
 }
 function clearSession() {
   authToken = null; currentUser = null;
-  localStorage.removeItem('stemify_token');
-  localStorage.removeItem('stemify_user');
+  localStorage.removeItem('vs_token');
+  localStorage.removeItem('vs_user');
 }
 
-// ── SOCIAL AUTH ──
-// TODO: Implement backend OAuth endpoints then remove the toast and redirect here.
-// For Google: window.location.href = API_BASE + '/api/auth/google';
-// For Apple:  window.location.href = API_BASE + '/api/auth/apple';
-// Backend should redirect back to this page with ?token=xxx after OAuth completes.
+// ── SOCIAL AUTH (UI only — needs backend OAuth routes) ──
+// TODO: when backend routes are ready, replace the toast with:
+// window.location.href = API_BASE + '/api/auth/google';  (or /apple)
 function socialAuth(provider) {
-  const labels = { google: 'Google', apple: 'Apple' };
-  showToast(`${labels[provider]} sign-in coming soon — use email for now.`);
+  showToast(`${provider.charAt(0).toUpperCase()+provider.slice(1)} sign-in coming soon — use email for now.`);
 }
-
-// On page load: check for ?token= param (from OAuth redirect)
-(function checkOAuthRedirect() {
-  const params = new URLSearchParams(window.location.search);
-  const token = params.get('token');
-  const email = params.get('email');
-  if (token && email) {
-    saveSession(token, { email, stem_count: 0, jobs_created: 0 });
-    window.history.replaceState({}, '', window.location.pathname);
-  }
+// Handle ?token= redirect back from OAuth
+(function() {
+  const p = new URLSearchParams(window.location.search);
+  const t = p.get('token'), e = p.get('email');
+  if (t && e) { saveSession(t, {email:e, stem_count:0, jobs_created:0}); window.history.replaceState({}, '', window.location.pathname); }
 })();
 
 // ── UI STATE ──
@@ -635,13 +671,12 @@ function updateAuthUI() {
   const authGate   = document.getElementById('authGate');
   const legalCheck = document.getElementById('legalCheck');
   const dropzone   = document.getElementById('dropzone');
-
   if (authToken && currentUser) {
     loggedOut.style.display = 'none';
     loggedIn.classList.add('show');
     document.getElementById('navEmail').textContent = currentUser.email;
-    document.getElementById('navStems').textContent = currentUser.stem_count + ' stems used';
-    document.getElementById('navAvatar').textContent = (currentUser.email[0] || '?').toUpperCase();
+    document.getElementById('navStems').textContent = (currentUser.stem_count||0) + ' stems split';
+    document.getElementById('navAvatar').textContent = (currentUser.email[0]||'?').toUpperCase();
     authGate.classList.remove('show');
     legalCheck.classList.add('show');
     dropzone.classList.remove('locked');
@@ -650,15 +685,20 @@ function updateAuthUI() {
     loggedIn.classList.remove('show');
     authGate.classList.add('show');
     legalCheck.classList.remove('show');
-    document.getElementById('legalCb').checked = false;
+    const cb = document.getElementById('legalCb');
+    if (cb) cb.checked = false;
     dropzone.classList.add('locked');
   }
   updateSplitBtn();
 }
+function updateSplitBtn() {
+  const cb = document.getElementById('legalCb');
+  document.getElementById('splitBtn').disabled = !(authToken && fileSelected && cb && cb.checked);
+}
+function signOut() { clearSession(); updateAuthUI(); showToast('Signed out. See you next time!'); }
 
 let pollInterval = null;
 let fakeProgressInterval = null;
-
 function cancelProcessing() {
   if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
   if (fakeProgressInterval) { clearInterval(fakeProgressInterval); fakeProgressInterval = null; }
@@ -667,203 +707,106 @@ function cancelProcessing() {
   splitMode = false;
   showToast('Processing cancelled.');
 }
-function updateSplitBtn() {
-  const cb = document.getElementById('legalCb');
-  const btn = document.getElementById('splitBtn');
-  btn.disabled = !(authToken && fileSelected && cb && cb.checked);
-}
-function signOut() {
-  clearSession();
-  updateAuthUI();
-  showToast('Signed out. See you next time!');
-}
 
 // ── AUTH MODAL ──
 let activeTab = 'signup';
-function openModal(tab='signup') {
-  document.getElementById('authModal').classList.add('show');
-  switchTab(tab);
-  setTimeout(() => document.getElementById('authEmail').focus(), 100);
-}
-function closeModal() {
-  document.getElementById('authModal').classList.remove('show');
-  clearAuthError();
-  document.getElementById('authEmail').value = '';
-  document.getElementById('authPassword').value = '';
-}
+function openModal(tab='signup') { document.getElementById('authModal').classList.add('show'); switchTab(tab); setTimeout(()=>document.getElementById('authEmail').focus(),100); }
+function closeModal() { document.getElementById('authModal').classList.remove('show'); clearAuthError(); document.getElementById('authEmail').value=''; document.getElementById('authPassword').value=''; }
 function switchTab(tab) {
   activeTab = tab;
-  const isSignup = tab === 'signup';
-  document.getElementById('tabSignup').classList.toggle('active', isSignup);
-  document.getElementById('tabSignin').classList.toggle('active', !isSignup);
-  document.getElementById('modalTitle').textContent = isSignup ? 'Create your account' : 'Welcome back';
-  document.getElementById('modalSub').textContent = isSignup
-    ? 'Sign up free — splits and stem counts saved to your account.'
-    : 'Sign in to continue splitting tracks.';
-  document.getElementById('btnAuth').textContent = isSignup ? 'Create account' : 'Sign in';
-  document.getElementById('authSwitch').innerHTML = isSignup
-    ? 'Already have an account? <a onclick="switchTab(\'signin\')">Sign in</a>'
-    : 'New here? <a onclick="switchTab(\'signup\')">Create free account</a>';
+  const s = tab==='signup';
+  document.getElementById('tabSignup').classList.toggle('active',s);
+  document.getElementById('tabSignin').classList.toggle('active',!s);
+  document.getElementById('modalTitle').textContent = s ? 'Create your account' : 'Welcome back';
+  document.getElementById('modalSub').textContent = s ? 'Free to try — splits and usage tracked to your account.' : 'Sign in to continue splitting tracks.';
+  document.getElementById('btnAuth').textContent = s ? 'Create account' : 'Sign in';
+  document.getElementById('authSwitch').innerHTML = s ? 'Already have an account? <a onclick="switchTab(\'signin\')">Sign in</a>' : 'New here? <a onclick="switchTab(\'signup\')">Create free account</a>';
   clearAuthError();
 }
-function showAuthError(msg) {
-  const el = document.getElementById('authError');
-  el.textContent = msg; el.classList.add('show');
-}
-function clearAuthError() {
-  document.getElementById('authError').classList.remove('show');
-}
+function showAuthError(msg) { const el=document.getElementById('authError'); el.textContent=msg; el.classList.add('show'); }
+function clearAuthError() { document.getElementById('authError').classList.remove('show'); }
 async function submitAuth() {
-  const email    = document.getElementById('authEmail').value.trim();
-  const password = document.getElementById('authPassword').value;
-  const btn      = document.getElementById('btnAuth');
-  if (!email || !password) { showAuthError('Please fill in both fields.'); return; }
-  if (password.length < 6) { showAuthError('Password must be at least 6 characters.'); return; }
-  clearAuthError();
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span>' + (activeTab==='signup' ? 'Creating account…' : 'Signing in…');
+  const email=document.getElementById('authEmail').value.trim(), password=document.getElementById('authPassword').value, btn=document.getElementById('btnAuth');
+  if (!email||!password) { showAuthError('Please fill in both fields.'); return; }
+  if (password.length<6) { showAuthError('Password must be at least 6 characters.'); return; }
+  clearAuthError(); btn.disabled=true;
+  btn.innerHTML='<span class="spinner"></span>'+(activeTab==='signup'?'Creating account…':'Signing in…');
   try {
-    const data = activeTab==='signup' ? await apiSignUp(email, password) : await apiSignIn(email, password);
-    saveSession(data.token, data.user);
-    closeModal();
-    updateAuthUI();
-    showToast(activeTab==='signup' ? '🎉 Account created! Upload a track to get started.' : '👋 Welcome back, ' + data.user.email.split('@')[0] + '!');
-  } catch(err) {
-    showAuthError(err.message);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = activeTab==='signup' ? 'Create account' : 'Sign in';
-  }
+    const data = activeTab==='signup' ? await apiSignUp(email,password) : await apiSignIn(email,password);
+    saveSession(data.token, data.user); closeModal(); updateAuthUI();
+    showToast(activeTab==='signup' ? '🎉 Account created! Upload a track to get started.' : '👋 Welcome back, '+data.user.email.split('@')[0]+'!');
+  } catch(err) { showAuthError(err.message); }
+  finally { btn.disabled=false; btn.textContent=activeTab==='signup'?'Create account':'Sign in'; }
 }
-['authEmail','authPassword'].forEach(id => {
-  document.getElementById(id).addEventListener('keydown', e => { if(e.key==='Enter') submitAuth(); });
-});
-document.getElementById('authModal').addEventListener('click', e => {
-  if (e.target === document.getElementById('authModal')) closeModal();
-});
+['authEmail','authPassword'].forEach(id=>document.getElementById(id).addEventListener('keydown',e=>{if(e.key==='Enter')submitAuth();}));
+document.getElementById('authModal').addEventListener('click',e=>{if(e.target===document.getElementById('authModal'))closeModal();});
 
 // ── PAYMENT MODAL ──
-let pendingDownloadUrl  = null;
-let pendingDownloadName = null;
-let pendingIsZip = false;
-
-function openPayModal(url, filename, icon, stemName, isZip) {
-  pendingDownloadUrl  = url;
-  pendingDownloadName = filename;
-  pendingIsZip = !!isZip;
-  document.getElementById('payIcon').textContent = icon || '🎵';
-  document.getElementById('payStemName').textContent = stemName || 'Stem';
-  document.getElementById('payCardNum').value = '';
-  document.getElementById('payExpiry').value  = '';
-  document.getElementById('payCvc').value     = '';
+let pendingDownloadUrl=null, pendingDownloadName=null;
+function openPayModal(url,filename,icon,stemName) {
+  pendingDownloadUrl=url; pendingDownloadName=filename;
+  document.getElementById('payIcon').textContent=icon||'🎵';
+  document.getElementById('payStemName').textContent=stemName||'Stem';
+  ['payCardNum','payExpiry','payCvc'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('payModal').classList.add('show');
 }
-function closePayModal() {
-  document.getElementById('payModal').classList.remove('show');
-  pendingDownloadUrl = null;
-}
-document.getElementById('payModal').addEventListener('click', e => {
-  if (e.target === document.getElementById('payModal')) closePayModal();
-});
-
-// Card formatting helpers
-function fmtCard(el) {
-  let v = el.value.replace(/\D/g,'').slice(0,16);
-  el.value = v.replace(/(.{4})/g,'$1 ').trim();
-}
-function fmtExpiry(el) {
-  let v = el.value.replace(/\D/g,'').slice(0,4);
-  if (v.length > 2) v = v.slice(0,2) + '/' + v.slice(2);
-  el.value = v;
-}
-
+function closePayModal() { document.getElementById('payModal').classList.remove('show'); pendingDownloadUrl=null; }
+document.getElementById('payModal').addEventListener('click',e=>{if(e.target===document.getElementById('payModal'))closePayModal();});
+function fmtCard(el) { let v=el.value.replace(/\D/g,'').slice(0,16); el.value=v.replace(/(.{4})/g,'$1 ').trim(); }
+function fmtExpiry(el) { let v=el.value.replace(/\D/g,'').slice(0,4); if(v.length>2)v=v.slice(0,2)+'/'+v.slice(2); el.value=v; }
 async function submitPayment() {
-  const num    = document.getElementById('payCardNum').value.replace(/\s/g,'');
-  const expiry = document.getElementById('payExpiry').value;
-  const cvc    = document.getElementById('payCvc').value;
-  if (num.length < 16 || expiry.length < 5 || cvc.length < 3) {
-    showToast('Please fill in all card details.'); return;
-  }
-  const btn = document.getElementById('btnPay');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span>Processing…';
-
-  // TODO: Replace this mock with a real Stripe PaymentIntent flow:
-  //   1. POST to /api/payment/create-intent with { amount: 300, currency: 'usd' }
-  //   2. Confirm with stripe.confirmCardPayment(clientSecret, { payment_method: { card: cardElement } })
-  //   3. On success, call execDownload()
-  await new Promise(r => setTimeout(r, 1800)); // mock delay
-  btn.disabled = false;
-  btn.textContent = 'Pay $3 & Download';
-  closePayModal();
-  showToast('✅ Payment successful! Downloading…');
+  const num=document.getElementById('payCardNum').value.replace(/\s/g,''), expiry=document.getElementById('payExpiry').value, cvc=document.getElementById('payCvc').value;
+  if(num.length<16||expiry.length<5||cvc.length<3){showToast('Please fill in all card details.');return;}
+  const btn=document.getElementById('btnPay'); btn.disabled=true; btn.innerHTML='<span class="spinner"></span>Processing…';
+  // TODO: Replace mock with Stripe:
+  //   1. POST /api/payment/create-intent → { clientSecret }
+  //   2. stripe.confirmCardPayment(clientSecret, { payment_method: { card: cardElement } })
+  //   3. On success → execDownload(pendingDownloadUrl, pendingDownloadName)
+  await new Promise(r=>setTimeout(r,1800));
+  btn.disabled=false; btn.textContent='Pay $3 & Download';
+  closePayModal(); showToast('✅ Payment successful! Downloading…');
   execDownload(pendingDownloadUrl, pendingDownloadName);
 }
-
 async function execDownload(url, filename) {
   try {
-    const res = await fetch(url, {
-      headers: authToken ? { 'Authorization': 'Bearer ' + authToken } : {}
-    });
-    if (!res.ok) throw new Error('Download failed (' + res.status + ')');
-    const blob = await res.blob();
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(a.href);
-  } catch(err) {
-    showToast('Download error: ' + err.message);
-  }
+    const res=await fetch(url,{headers:authToken?{'Authorization':'Bearer '+authToken}:{}});
+    if(!res.ok) throw new Error('Download failed ('+res.status+')');
+    const blob=await res.blob(), a=document.createElement('a');
+    a.href=URL.createObjectURL(blob); a.download=filename; a.click(); URL.revokeObjectURL(a.href);
+  } catch(err) { showToast('Download error: '+err.message); }
 }
+
+// ── FAQ TOGGLE ──
+function toggleFaq(el) { el.closest('.faq-item').classList.toggle('open'); }
 
 // ── STEM DEFINITIONS ──
 const STEM_DEFS = {
-  2:[{name:'Vocals',key:'Isolated voice',icon:'🎤',color:'#7C3AED'},{name:'Instrumental',key:'Everything else',icon:'🎸',color:'#00C896'}],
-  4:[{name:'Vocals',key:'Isolated voice',icon:'🎤',color:'#7C3AED'},{name:'Drums',key:'Kick, snare, hi-hat',icon:'🥁',color:'#F59E0B'},{name:'Bass',key:'Low-end groove',icon:'🎸',color:'#EF4444'},{name:'Other',key:'Keys, synths, guitar',icon:'🎹',color:'#00C896'}],
-  6:[{name:'Vocals',key:'Lead + harmonies',icon:'🎤',color:'#7C3AED'},{name:'Drums',key:'Full kit',icon:'🥁',color:'#F59E0B'},{name:'Bass Guitar',key:'Low-end groove',icon:'🎸',color:'#EF4444'},{name:'Electric Guitar',key:'Riffs & leads',icon:'🎸',color:'#F97316'},{name:'Piano / Keys',key:'Chords & melodies',icon:'🎹',color:'#00C896'},{name:'Other',key:'FX, pads, misc',icon:'🎵',color:'#00F5FF'}],
-  8:[{name:'Vocals',key:'Lead + harmonies',icon:'🎤',color:'#7C3AED'},{name:'Drums',key:'Full kit',icon:'🥁',color:'#F59E0B'},{name:'Bass Guitar',key:'Sub & bass',icon:'🎸',color:'#EF4444'},{name:'Electric Guitar',key:'Riffs & leads',icon:'🎸',color:'#F97316'},{name:'Piano / Keys',key:'Chords & melody',icon:'🎹',color:'#00C896'},{name:'Strings',key:'Orchestral layer',icon:'🎻',color:'#EC4899'},{name:'Synths',key:'Pads & arps',icon:'🎛️',color:'#8B5CF6'},{name:'FX',key:'Noise & ambience',icon:'🔊',color:'#00F5FF'}],
-  10:[{name:'Lead Vocals',key:'Main voice',icon:'🎤',color:'#7C3AED'},{name:'Backing Vocals',key:'Harmonies',icon:'🎤',color:'#9D6EF8'},{name:'Kick & Snare',key:'Core rhythm',icon:'🥁',color:'#F59E0B'},{name:'Hi-hats',key:'Top-end percussion',icon:'🥁',color:'#FCD34D'},{name:'Bass Guitar',key:'Sub & bass',icon:'🎸',color:'#EF4444'},{name:'Electric Guitar',key:'Riffs & leads',icon:'🎸',color:'#F97316'},{name:'Piano / Keys',key:'Chords & melody',icon:'🎹',color:'#00C896'},{name:'Strings',key:'Orchestral layer',icon:'🎻',color:'#EC4899'},{name:'Synths',key:'Pads & arps',icon:'🎛️',color:'#8B5CF6'},{name:'FX / Other',key:'Noise & ambience',icon:'🔊',color:'#00F5FF'}]
+  2:[{name:'Vocals',key:'Isolated voice',icon:'🎤',color:'#6D28D9'},{name:'Instrumental',key:'Everything else',icon:'🎸',color:'#10B981'}],
+  4:[{name:'Vocals',key:'Isolated voice',icon:'🎤',color:'#6D28D9'},{name:'Drums',key:'Kick, snare, hi-hat',icon:'🥁',color:'#F59E0B'},{name:'Bass',key:'Low-end groove',icon:'🎸',color:'#EF4444'},{name:'Other',key:'Keys, synths, guitar',icon:'🎹',color:'#10B981'}],
+  6:[{name:'Vocals',key:'Lead + harmonies',icon:'🎤',color:'#6D28D9'},{name:'Drums',key:'Full kit',icon:'🥁',color:'#F59E0B'},{name:'Bass Guitar',key:'Low-end groove',icon:'🎸',color:'#EF4444'},{name:'Electric Guitar',key:'Riffs & leads',icon:'🎸',color:'#F97316'},{name:'Piano / Keys',key:'Chords & melodies',icon:'🎹',color:'#10B981'},{name:'Other',key:'FX, pads, misc',icon:'🎵',color:'#22D3EE'}],
+  8:[{name:'Vocals',key:'Lead + harmonies',icon:'🎤',color:'#6D28D9'},{name:'Drums',key:'Full kit',icon:'🥁',color:'#F59E0B'},{name:'Bass Guitar',key:'Sub & bass',icon:'🎸',color:'#EF4444'},{name:'Electric Guitar',key:'Riffs & leads',icon:'🎸',color:'#F97316'},{name:'Piano / Keys',key:'Chords & melody',icon:'🎹',color:'#10B981'},{name:'Strings',key:'Orchestral layer',icon:'🎻',color:'#EC4899'},{name:'Synths',key:'Pads & arps',icon:'🎛️',color:'#8B5CF6'},{name:'FX',key:'Noise & ambience',icon:'🔊',color:'#22D3EE'}],
+  10:[{name:'Lead Vocals',key:'Main voice',icon:'🎤',color:'#6D28D9'},{name:'Backing Vocals',key:'Harmonies',icon:'🎤',color:'#8B5CF6'},{name:'Kick & Snare',key:'Core rhythm',icon:'🥁',color:'#F59E0B'},{name:'Hi-hats',key:'Top-end percussion',icon:'🥁',color:'#FCD34D'},{name:'Bass Guitar',key:'Sub & bass',icon:'🎸',color:'#EF4444'},{name:'Electric Guitar',key:'Riffs & leads',icon:'🎸',color:'#F97316'},{name:'Piano / Keys',key:'Chords & melody',icon:'🎹',color:'#10B981'},{name:'Strings',key:'Orchestral layer',icon:'🎻',color:'#EC4899'},{name:'Synths',key:'Pads & arps',icon:'🎛️',color:'#8B5CF6'},{name:'FX / Other',key:'Noise & ambience',icon:'🔊',color:'#22D3EE'}]
 };
 
-let selectedStems = 4;
-let fileSelected  = false;
-let currentFile   = null;
-let isPlaying     = {};
-let audioObjects  = {};
-let currentJobId  = null;
-let stemUrls      = {};
+let selectedStems=4, fileSelected=false, currentFile=null, isPlaying={}, audioObjects={}, currentJobId=null, stemUrls={}, splitMode=false;
 
 // ── CANVAS WAVEFORM ──
-const canvas = document.getElementById('waveCanvas');
-const ctx2d  = canvas.getContext('2d');
-function resizeCanvas() {
-  canvas.width  = canvas.offsetWidth * window.devicePixelRatio;
-  canvas.height = canvas.offsetHeight * window.devicePixelRatio;
-  ctx2d.scale(window.devicePixelRatio, window.devicePixelRatio);
-}
-resizeCanvas();
-window.addEventListener('resize', resizeCanvas);
-let phase = 0, stemPhases = Array.from({length:10},(_,i)=>i*0.7), splitMode = false;
-function drawWave() {
-  const w = canvas.offsetWidth, h = canvas.offsetHeight;
-  ctx2d.clearRect(0,0,w,h);
-  if (!splitMode) {
-    ctx2d.beginPath();
-    const g = ctx2d.createLinearGradient(0,0,w,0);
-    g.addColorStop(0,'#7C3AED'); g.addColorStop(0.5,'#00F5FF'); g.addColorStop(1,'#7C3AED');
-    ctx2d.strokeStyle=g; ctx2d.lineWidth=2; ctx2d.shadowColor='#7C3AED'; ctx2d.shadowBlur=12;
+const canvas=document.getElementById('waveCanvas'), ctx2d=canvas.getContext('2d');
+function resizeCanvas(){canvas.width=canvas.offsetWidth*window.devicePixelRatio;canvas.height=canvas.offsetHeight*window.devicePixelRatio;ctx2d.scale(window.devicePixelRatio,window.devicePixelRatio);}
+resizeCanvas(); window.addEventListener('resize',resizeCanvas);
+let phase=0, stemPhases=Array.from({length:10},(_,i)=>i*0.7);
+function drawWave(){
+  const w=canvas.offsetWidth,h=canvas.offsetHeight; ctx2d.clearRect(0,0,w,h);
+  if(!splitMode){
+    ctx2d.beginPath();const g=ctx2d.createLinearGradient(0,0,w,0);g.addColorStop(0,'#6D28D9');g.addColorStop(0.5,'#22D3EE');g.addColorStop(1,'#6D28D9');ctx2d.strokeStyle=g;ctx2d.lineWidth=2;ctx2d.shadowColor='#6D28D9';ctx2d.shadowBlur=14;
     for(let x=0;x<=w;x++){const t=x/w;const y=h/2+Math.sin(t*14+phase)*h*0.22+Math.sin(t*7+phase*1.3)*h*0.12+Math.sin(t*22+phase*0.8)*h*0.06;x===0?ctx2d.moveTo(x,y):ctx2d.lineTo(x,y);}
-    ctx2d.stroke(); ctx2d.shadowBlur=0;
+    ctx2d.stroke();ctx2d.shadowBlur=0;
   } else {
     const trackH=h/selectedStems;
     STEM_DEFS[selectedStems].forEach((stem,i)=>{
-      const yC=trackH*i+trackH/2,amp=trackH*0.35;
-      ctx2d.beginPath(); ctx2d.strokeStyle=stem.color; ctx2d.lineWidth=1.5; ctx2d.globalAlpha=0.85; ctx2d.shadowColor=stem.color; ctx2d.shadowBlur=8;
-      stemPhases[i]+=0.018+i*0.003;
+      const yC=trackH*i+trackH/2,amp=trackH*0.35;ctx2d.beginPath();ctx2d.strokeStyle=stem.color;ctx2d.lineWidth=1.5;ctx2d.globalAlpha=0.85;ctx2d.shadowColor=stem.color;ctx2d.shadowBlur=8;stemPhases[i]+=0.018+i*0.003;
       for(let x=0;x<=w;x++){const t=x/w;const y=yC+Math.sin(t*(8+i*2.5)+stemPhases[i])*amp+Math.sin(t*(15+i)+stemPhases[i]*1.4)*amp*0.3;x===0?ctx2d.moveTo(x,y):ctx2d.lineTo(x,y);}
-      ctx2d.stroke(); ctx2d.globalAlpha=1; ctx2d.shadowBlur=0;
-      ctx2d.fillStyle=stem.color; ctx2d.font='10px Inter'; ctx2d.globalAlpha=0.7; ctx2d.fillText(stem.name,6,yC-6); ctx2d.globalAlpha=1;
+      ctx2d.stroke();ctx2d.globalAlpha=1;ctx2d.shadowBlur=0;ctx2d.fillStyle=stem.color;ctx2d.font='10px Inter';ctx2d.globalAlpha=0.7;ctx2d.fillText(stem.name,6,yC-6);ctx2d.globalAlpha=1;
     });
   }
   phase+=0.03; requestAnimationFrame(drawWave);
@@ -871,213 +814,118 @@ function drawWave() {
 drawWave();
 
 // ── CHIPS ──
-document.getElementById('stemChips').addEventListener('click', e => {
-  const chip = e.target.closest('.chip');
-  if (!chip) return;
-  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
-  chip.classList.add('active');
-  selectedStems = parseInt(chip.dataset.n);
-});
+document.getElementById('stemChips').addEventListener('click',e=>{const chip=e.target.closest('.chip');if(!chip)return;document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));chip.classList.add('active');selectedStems=parseInt(chip.dataset.n);});
 
 // ── DROPZONE ──
-const dropzone = document.getElementById('dropzone');
-const fileInput = document.getElementById('fileInput');
-dropzone.addEventListener('dragover', e=>{e.preventDefault();dropzone.classList.add('drag-over');});
+const dropzone=document.getElementById('dropzone'), fileInput=document.getElementById('fileInput');
+dropzone.addEventListener('dragover',e=>{e.preventDefault();dropzone.classList.add('drag-over');});
 dropzone.addEventListener('dragleave',()=>dropzone.classList.remove('drag-over'));
-dropzone.addEventListener('drop', e=>{
-  e.preventDefault(); dropzone.classList.remove('drag-over');
-  if (!authToken){openModal('signup');return;}
-  const f=e.dataTransfer.files[0]; if(f) handleFile(f);
-});
-fileInput.addEventListener('change', e=>{
-  if (!authToken){openModal('signup');return;}
-  if(e.target.files[0]) handleFile(e.target.files[0]);
-});
-function handleFile(file) {
-  currentFile = file; fileSelected = true;
-  document.getElementById('dropTitle').textContent = '🎵 ' + file.name;
-  document.getElementById('splitBtn').textContent = 'Split "' + file.name.slice(0,24) + (file.name.length>24?'…':'') + '"';
+dropzone.addEventListener('drop',e=>{e.preventDefault();dropzone.classList.remove('drag-over');if(!authToken){openModal('signup');return;}const f=e.dataTransfer.files[0];if(f)handleFile(f);});
+fileInput.addEventListener('change',e=>{if(!authToken){openModal('signup');return;}if(e.target.files[0])handleFile(e.target.files[0]);});
+function handleFile(file){
+  currentFile=file; fileSelected=true;
+  document.getElementById('dropTitle').textContent='🎵 '+file.name;
+  document.getElementById('splitBtn').textContent='Split "'+file.name.slice(0,24)+(file.name.length>24?'…':'')+'"';
   updateSplitBtn();
 }
 
 // ── SPLIT ──
-document.getElementById('splitBtn').addEventListener('click', ()=>{
-  if (!authToken){openModal('signin');return;}
-  if (!fileSelected) return;
-  if (!document.getElementById('legalCb').checked){showToast('Please accept the copyright notice first.');return;}
+document.getElementById('splitBtn').addEventListener('click',()=>{
+  if(!authToken){openModal('signin');return;}
+  if(!fileSelected)return;
+  if(!document.getElementById('legalCb').checked){showToast('Please accept the copyright notice first.');return;}
   startProcessing();
 });
 
-async function startProcessing() {
+async function startProcessing(){
   document.getElementById('processing').classList.add('show');
   document.getElementById('results').classList.remove('show');
-  document.getElementById('splitBtn').disabled = true;
-  splitMode = true;
+  document.getElementById('splitBtn').disabled=true; splitMode=true;
   const fill=document.getElementById('progressFill'), label=document.getElementById('processingLabel');
   fill.style.width='0%';
   const labels=['Uploading audio…','Analysing frequencies…','Isolating stems…','Separating transients…','Rendering audio…','Finalising…'];
   let fp=0, li=0;
-  const iv=setInterval(()=>{
-    const inc=fp<80?(Math.random()*2+0.5):0.15;
-    fp=Math.min(fp+inc,92); fill.style.width=fp+'%';
-    const t=Math.min(Math.floor(fp/(100/labels.length)),labels.length-1);
-    if(t!==li){li=t;label.textContent=labels[li];}
-  },800);
+  fakeProgressInterval=setInterval(()=>{const inc=fp<80?(Math.random()*2+0.5):0.15;fp=Math.min(fp+inc,92);fill.style.width=fp+'%';const t=Math.min(Math.floor(fp/(100/labels.length)),labels.length-1);if(t!==li){li=t;label.textContent=labels[li];}},800);
   try {
-    const fd=new FormData();
-    fd.append('file',currentFile); fd.append('stems',selectedStems);
+    const fd=new FormData(); fd.append('file',currentFile); fd.append('stems',selectedStems);
     const resp=await fetch(API_BASE+'/api/split',{method:'POST',headers:{'Authorization':'Bearer '+authToken},body:fd});
     if(resp.status===401){clearSession();updateAuthUI();throw new Error('Session expired. Please sign in again.');}
     if(!resp.ok){const e=await resp.json().catch(()=>({detail:'Upload failed'}));throw new Error(e.detail||'HTTP '+resp.status);}
-    const startData=await resp.json();
-    currentJobId=startData.job_id;
-    if(startData.user){currentUser={...currentUser,...startData.user};localStorage.setItem('stemify_user',JSON.stringify(currentUser));document.getElementById('navStems').textContent=currentUser.stem_count+' stems used';}
-    const POLL_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
-    const pollStart = Date.now();
+    const startData=await resp.json(); currentJobId=startData.job_id;
+    if(startData.user){currentUser={...currentUser,...startData.user};localStorage.setItem('vs_user',JSON.stringify(currentUser));document.getElementById('navStems').textContent=(currentUser.stem_count||0)+' stems split';}
+
+    const POLL_TIMEOUT_MS=10*60*1000, pollStart=Date.now();
     const job=await new Promise((resolve,reject)=>{
-      const pi=setInterval(async()=>{
-        // Timeout guard
-        if (Date.now() - pollStart > POLL_TIMEOUT_MS) {
-          clearInterval(pi);
-          reject(new Error('Processing timed out after 10 minutes. The server may be overloaded — please try again.'));
-          return;
-        }
-        // Update label based on elapsed time so it doesn't feel frozen
-        const elapsed = Math.floor((Date.now() - pollStart) / 1000);
-        if (elapsed > 120) label.textContent = 'Still working — large files take a few minutes…';
-        else if (elapsed > 60) label.textContent = 'Demucs is separating your stems…';
-        else if (elapsed > 30) label.textContent = 'Processing audio — almost there…';
+      pollInterval=setInterval(async()=>{
+        if(Date.now()-pollStart>POLL_TIMEOUT_MS){clearInterval(pollInterval);reject(new Error('Processing timed out after 10 minutes. Please try a shorter file or fewer stems.'));return;}
+        const elapsed=Math.floor((Date.now()-pollStart)/1000);
+        if(elapsed>120) label.textContent='Still working — large files take a few minutes…';
+        else if(elapsed>60) label.textContent='Demucs is separating your stems…';
+        else if(elapsed>30) label.textContent='Processing audio — hang tight…';
         try{
           const pr=await fetch(API_BASE+'/api/job/'+currentJobId,{headers:{'Authorization':'Bearer '+authToken}});
-          if(pr.status===401){clearInterval(pi);clearSession();updateAuthUI();reject(new Error('Session expired. Please sign in again.'));return;}
-          if(!pr.ok){
-            // Don't abort on a single poll failure — server might be briefly busy
-            console.warn('Poll returned', pr.status, '— retrying');
-            return;
-          }
+          if(pr.status===401){clearInterval(pollInterval);clearSession();updateAuthUI();reject(new Error('Session expired.'));return;}
+          if(!pr.ok){console.warn('Poll returned',pr.status,'— retrying');return;}
           const d=await pr.json();
-          if(d.status==='done'){clearInterval(pi);resolve(d);}
-          else if(d.status==='error'){clearInterval(pi);reject(new Error(d.error||'Processing failed on the server. Please try a shorter file or fewer stems.'));}
-          // status==='processing' → keep polling
-        }catch(e){
-          // Network hiccup — log but don't abort, will retry next interval
-          console.warn('Poll network error:', e.message);
-        }
+          if(d.status==='done'){clearInterval(pollInterval);resolve(d);}
+          else if(d.status==='error'){clearInterval(pollInterval);reject(new Error(d.error||'Processing failed on the server. Try a shorter file or fewer stems.'));}
+        }catch(e){console.warn('Poll network error:',e.message);}
       },3000);
     });
-    clearInterval(iv); fill.style.width='100%'; label.textContent='Done!';
-    stemUrls=job.stem_urls||{};
-    setTimeout(()=>showResults(job),500);
-  } catch(err) {
-    clearInterval(iv);
+
+    clearInterval(fakeProgressInterval); fill.style.width='100%'; label.textContent='Done!';
+    stemUrls=job.stem_urls||{}; setTimeout(()=>showResults(job),500);
+  } catch(err){
+    clearInterval(fakeProgressInterval); clearInterval(pollInterval);
     document.getElementById('processing').classList.remove('show');
     document.getElementById('splitBtn').disabled=false; splitMode=false;
     showToast('Error: '+err.message);
-    if(err.message.toLowerCase().includes('session expired')) setTimeout(()=>openModal('signin'),800);
+    if(err.message.toLowerCase().includes('session expired'))setTimeout(()=>openModal('signin'),800);
   }
 }
 
 // ── RESULTS ──
-const STEM_DISPLAY = {
-  vocals:   {name:'Vocals',      icon:'🎤',color:'#7C3AED',key:'Lead & harmonies'},
-  no_vocals:{name:'Instrumental',icon:'🎸',color:'#00C896',key:'Everything else'},
-  drums:    {name:'Drums',       icon:'🥁',color:'#F59E0B',key:'Kick, snare, hi-hat'},
-  bass:     {name:'Bass',        icon:'🎸',color:'#EF4444',key:'Low-end groove'},
-  other:    {name:'Other',       icon:'🎵',color:'#00F5FF',key:'Keys, synths, misc'},
-  guitar:   {name:'Guitar',      icon:'🎸',color:'#F97316',key:'Riffs & leads'},
-  piano:    {name:'Piano / Keys',icon:'🎹',color:'#EC4899',key:'Chords & melody'},
-};
+const STEM_DISPLAY={vocals:{name:'Vocals',icon:'🎤',color:'#6D28D9',key:'Lead & harmonies'},no_vocals:{name:'Instrumental',icon:'🎸',color:'#10B981',key:'Everything else'},drums:{name:'Drums',icon:'🥁',color:'#F59E0B',key:'Kick, snare, hi-hat'},bass:{name:'Bass',icon:'🎸',color:'#EF4444',key:'Low-end groove'},other:{name:'Other',icon:'🎵',color:'#22D3EE',key:'Keys, synths, misc'},guitar:{name:'Guitar',icon:'🎸',color:'#F97316',key:'Riffs & leads'},piano:{name:'Piano / Keys',icon:'🎹',color:'#EC4899',key:'Chords & melody'}};
 
-function showResults(data) {
+function showResults(data){
   document.getElementById('processing').classList.remove('show');
   document.getElementById('results').classList.add('show');
   const stemNames=data.stems||[];
   document.getElementById('resultCount').textContent=stemNames.length+' stems';
-  const grid=document.getElementById('stemsGrid');
-  grid.innerHTML=''; audioObjects={};
-
+  const grid=document.getElementById('stemsGrid'); grid.innerHTML=''; audioObjects={};
   stemNames.forEach((stemKey,i)=>{
     const def=STEM_DISPLAY[stemKey]||{name:stemKey,icon:'🎵',color:'#8B5CF6',key:'Stem'};
-    const dlPath=stemUrls[stemKey]||null;
-    const dlUrl=dlPath?(API_BASE+dlPath):null;
-    const card=document.createElement('div');
-    card.className='stem-card';
-    card.innerHTML=`
-      <div class="stem-header">
-        <div class="stem-icon" style="background:${def.color}22;">${def.icon}</div>
-        <div><div class="stem-name">${def.name}</div><div class="stem-key">${def.key}</div></div>
-      </div>
-      <div class="mini-wave" id="mw${i}"></div>
-      <div class="stem-controls">
-        <button class="btn-play" id="playBtn${i}" onclick="togglePlay(${i},'${dlUrl}')">
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M3 2l7 4-7 4V2z"/></svg> Play
-        </button>
-        ${dlUrl
-          ? `<button class="btn-dl" onclick="openPayModal('${dlUrl}','${stemKey}.wav','${def.icon}','${def.name}',false)" title="Download — $3">⬇ $3</button>`
-          : `<button class="btn-dl" disabled>⬇</button>`}
-      </div>`;
-    grid.appendChild(card);
-    buildMiniWave(i,def.color);
+    const dlPath=stemUrls[stemKey]||null, dlUrl=dlPath?(API_BASE+dlPath):null;
+    const card=document.createElement('div'); card.className='stem-card';
+    card.innerHTML=`<div class="stem-header"><div class="stem-icon" style="background:${def.color}22;">${def.icon}</div><div><div class="stem-name">${def.name}</div><div class="stem-key">${def.key}</div></div></div><div class="mini-wave" id="mw${i}"></div><div class="stem-controls"><button class="btn-play" id="playBtn${i}" onclick="togglePlay(${i},'${dlUrl}')"><svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M3 2l7 4-7 4V2z"/></svg> Play</button>${dlUrl?`<button class="btn-dl" onclick="openPayModal('${dlUrl}','${stemKey}.wav','${def.icon}','${def.name}')" title="Download — $3">⬇ $3</button>`:'<button class="btn-dl" disabled>⬇</button>'}</div>`;
+    grid.appendChild(card); buildMiniWave(i,def.color);
   });
-
-  if(currentJobId){
-    document.getElementById('dlAllBtn').onclick=()=>openPayModal(
-      API_BASE+'/api/download/'+currentJobId+'/zip',
-      'stemify_'+currentJobId+'.zip','📦','All stems (ZIP)',true
-    );
-  }
+  if(currentJobId) document.getElementById('dlAllBtn').onclick=()=>openPayModal(API_BASE+'/api/download/'+currentJobId+'/zip','vocalsplitter_'+currentJobId+'.zip','📦','All stems (ZIP)');
   document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
   document.getElementById('splitBtn').disabled=false;
 }
 
-function togglePlay(i, url) {
-  Object.keys(audioObjects).forEach(k=>{
-    if(parseInt(k)!==i&&audioObjects[k]){audioObjects[k].pause();audioObjects[k].currentTime=0;isPlaying[k]=false;const ob=document.getElementById('playBtn'+k);if(ob)ob.innerHTML=`<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M3 2l7 4-7 4V2z"/></svg> Play`;}
-  });
-  isPlaying[i]=!isPlaying[i];
-  const btn=document.getElementById('playBtn'+i);
+function togglePlay(i,url){
+  Object.keys(audioObjects).forEach(k=>{if(parseInt(k)!==i&&audioObjects[k]){audioObjects[k].pause();audioObjects[k].currentTime=0;isPlaying[k]=false;const ob=document.getElementById('playBtn'+k);if(ob)ob.innerHTML=`<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M3 2l7 4-7 4V2z"/></svg> Play`;}});
+  isPlaying[i]=!isPlaying[i]; const btn=document.getElementById('playBtn'+i);
   if(isPlaying[i]){
     if(!audioObjects[i]&&url&&url!=='null'){
-      fetch(url,{headers:{'Authorization':'Bearer '+authToken}}).then(r=>r.blob()).then(blob=>{
-        audioObjects[i]=new Audio(URL.createObjectURL(blob));
-        audioObjects[i].onended=()=>{isPlaying[i]=false;btn.innerHTML=`<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M3 2l7 4-7 4V2z"/></svg> Play`;btn.style.background='';};
-        audioObjects[i].play().catch(e=>showToast('Playback error: '+e.message));
-      }).catch(e=>showToast('Load error: '+e.message));
-    } else if(audioObjects[i]){audioObjects[i].play().catch(e=>showToast('Playback error: '+e.message));}
-    btn.innerHTML=`<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><rect x="2" y="2" width="3" height="8"/><rect x="7" y="2" width="3" height="8"/></svg> Pause`;
-    btn.style.background='rgba(124,58,237,0.4)';
-  } else {
-    if(audioObjects[i]) audioObjects[i].pause();
-    btn.innerHTML=`<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M3 2l7 4-7 4V2z"/></svg> Play`;
-    btn.style.background='';
-  }
+      fetch(url,{headers:{'Authorization':'Bearer '+authToken}}).then(r=>r.blob()).then(blob=>{audioObjects[i]=new Audio(URL.createObjectURL(blob));audioObjects[i].onended=()=>{isPlaying[i]=false;btn.innerHTML=`<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M3 2l7 4-7 4V2z"/></svg> Play`;btn.style.background='';};audioObjects[i].play().catch(e=>showToast('Playback error: '+e.message));}).catch(e=>showToast('Load error: '+e.message));
+    }else if(audioObjects[i])audioObjects[i].play().catch(e=>showToast('Playback error: '+e.message));
+    btn.innerHTML=`<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><rect x="2" y="2" width="3" height="8"/><rect x="7" y="2" width="3" height="8"/></svg> Pause`; btn.style.background='rgba(109,40,217,0.4)';
+  }else{ if(audioObjects[i])audioObjects[i].pause(); btn.innerHTML=`<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M3 2l7 4-7 4V2z"/></svg> Play`; btn.style.background=''; }
 }
 
-function buildMiniWave(i, color) {
-  const mw=document.getElementById('mw'+i);
-  mw.innerHTML='';
-  for(let b=0;b<30;b++){
-    const bar=document.createElement('div');
-    bar.className='mini-bar';
-    bar.style.cssText=`height:${20+Math.random()*80}%;background:${color};opacity:0.7;`;
-    mw.appendChild(bar);
-  }
-  setInterval(()=>{mw.querySelectorAll('.mini-bar').forEach(bar=>{if(isPlaying[i]){bar.style.height=(10+Math.random()*85)+'%';bar.style.opacity=0.5+Math.random()*0.5;}});},100);
+function buildMiniWave(i,color){
+  const mw=document.getElementById('mw'+i); mw.innerHTML='';
+  for(let b=0;b<30;b++){const bar=document.createElement('div');bar.className='mini-bar';bar.style.cssText=`height:${20+Math.random()*80}%;background:${color};opacity:0.7;`;mw.appendChild(bar);}
+  setInterval(()=>mw.querySelectorAll('.mini-bar').forEach(bar=>{if(isPlaying[i]){bar.style.height=(10+Math.random()*85)+'%';bar.style.opacity=0.5+Math.random()*0.5;}}),100);
 }
 
-// ── TOAST ──
-function showToast(msg) {
-  const t=document.getElementById('toast');
-  t.textContent=msg; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),3200);
-}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3200);}
 
-// ── SMOOTH SCROLL ──
-document.querySelectorAll('a[href^="#"]').forEach(a=>{
-  a.addEventListener('click',e=>{const el=document.querySelector(a.getAttribute('href'));if(el){e.preventDefault();el.scrollIntoView({behavior:'smooth'});}});
-});
+document.querySelectorAll('a[href^="#"]').forEach(a=>{a.addEventListener('click',e=>{const el=document.querySelector(a.getAttribute('href'));if(el){e.preventDefault();el.scrollIntoView({behavior:'smooth'});}});});
 
-// ── INIT ──
 updateAuthUI();
 </script>
 </body>
