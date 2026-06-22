@@ -416,7 +416,7 @@
     <div class="price-tag">$3</div>
     <div class="price-note">One-time · No subscription · Selected format</div>
     <button class="btn-checkout" id="btnCheckout" onclick="startCheckout()">
-      Pay $3 &amp; Download Full Song
+      Pay $3 AUD
     </button>
     <div class="checkout-note" id="checkoutNote">🔒 Secure checkout via Stripe</div>
     <div class="paid-downloads" id="paidDownloads">
@@ -962,7 +962,7 @@ function showResults(data) {
     buildMiniWave(i, def.color);
   });
 
-  renderPaidDownloads(paidDownloadUrls);
+  renderPaymentSection(paidDownloadUrls);
   saveJobState({ stems: stemNames, filename, quality: selectedQuality, outputFormat: selectedFormat });
   document.getElementById('results').scrollIntoView({ behavior:'smooth', block:'start' });
   document.getElementById('splitBtn').disabled = false;
@@ -994,7 +994,7 @@ async function startCheckout() {
       throw new Error('No checkout URL returned from server.');
     }
   } catch(err) {
-    btn.disabled = false; btn.textContent = 'Pay $3 & Download Full Song';
+    btn.disabled = false; btn.textContent = 'Pay $3 AUD';
     showToast('Checkout error: ' + err.message);
   }
 }
@@ -1055,9 +1055,12 @@ async function downloadProtectedFile(url, filename, btn) {
 }
 function normaliseDownloadEntries(urls = {}) {
   const entries = [];
-  if (urls.zip) entries.push({ key: 'zip', label: 'full ZIP', value: urls.zip, url: getDownloadUrl(urls.zip) });
+  const zipKeys = ['zip', 'full_zip', 'fullZip', 'zip_url', 'zipUrl', 'download_url', 'downloadUrl'];
+  zipKeys.forEach(key => {
+    if (urls[key]) entries.push({ key: 'zip', label: 'full ZIP', value: urls[key], url: getDownloadUrl(urls[key]) });
+  });
 
-  const stems = urls.stems;
+  const stems = urls.stems || urls.stem_urls || urls.stemUrls || urls.files;
   if (Array.isArray(stems)) {
     stems.forEach((stem, i) => {
       const name = stem?.name || stem?.stem || stem?.key || ('stem ' + (i + 1));
@@ -1070,24 +1073,54 @@ function normaliseDownloadEntries(urls = {}) {
   }
 
   Object.entries(urls).forEach(([key, value]) => {
-    if (key === 'zip' || key === 'stems') return;
+    if (zipKeys.includes(key) || ['stems', 'stem_urls', 'stemUrls', 'files'].includes(key)) return;
     entries.push({ key, label: key.replace(/_/g, ' '), value, url: getDownloadUrl(value) });
   });
 
   return entries.filter((entry, index, all) => entry.url && all.findIndex(other => other.url === entry.url) === index);
 }
+function hasPaidDownloadUrls(urls = {}) {
+  return normaliseDownloadEntries(urls).length > 0;
+}
+function renderPaymentSection(urls = paidDownloadUrls) {
+  const btn = document.getElementById('btnCheckout');
+  const note = document.getElementById('checkoutNote');
+  const wrap = document.getElementById('paidDownloads');
+  const grid = document.getElementById('paidDownloadGrid');
+
+  renderPaidMeta();
+  if (hasPaidDownloadUrls(urls)) {
+    renderDownloadSection(urls);
+    return;
+  }
+
+  paidDownloadUrls = {};
+  if (grid) grid.innerHTML = '';
+  wrap?.classList.remove('show');
+  if (btn) {
+    btn.style.display = '';
+    btn.disabled = false;
+    btn.textContent = 'Pay $3 AUD';
+  }
+  if (note) note.style.display = '';
+}
+function renderDownloadSection(urls = {}) {
+  renderPaidDownloads(urls);
+}
 function renderPaidDownloads(urls = {}) {
   const wrap = document.getElementById('paidDownloads');
   const grid = document.getElementById('paidDownloadGrid');
-  const meta = document.getElementById('paidMeta');
-  if (!urls || !Object.keys(urls).length) { wrap.classList.remove('show'); meta?.classList.remove('show'); return; }
+  const btnCheckout = document.getElementById('btnCheckout');
+  const checkoutNote = document.getElementById('checkoutNote');
+  const entries = normaliseDownloadEntries(urls);
+  if (!wrap || !grid || !entries.length) {
+    renderPaymentSection({});
+    return;
+  }
   paidDownloadUrls = urls;
   grid.innerHTML = '';
-  const entries = normaliseDownloadEntries(urls);
-  if (!entries.length) { wrap.classList.remove('show'); meta?.classList.remove('show'); return; }
   renderPaidMeta();
   entries.forEach(({ key, label, value, url }) => {
-    if (!url) return;
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'paid-download-btn' + (key === 'zip' ? ' primary' : '');
@@ -1095,8 +1128,8 @@ function renderPaidDownloads(urls = {}) {
     btn.addEventListener('click', () => downloadProtectedFile(url, downloadFilename(key, value), btn));
     grid.appendChild(btn);
   });
-  document.getElementById('btnCheckout').style.display = 'none';
-  document.getElementById('checkoutNote').style.display = 'none';
+  if (btnCheckout) btnCheckout.style.display = 'none';
+  if (checkoutNote) checkoutNote.style.display = 'none';
   wrap.classList.add('show');
   saveJobState();
 }
@@ -1151,8 +1184,7 @@ window.verifyStripeReturn = async function verifyStripeReturn() {
     setSelectedOptions(selectedQuality, selectedFormat);
     paidDownloadUrls = urls;
     currentJobId = jobId;
-    renderPaidMeta();
-    renderPaidDownloads(urls);
+    renderPaymentSection(urls);
     setPaymentStatus('Payment successful — your full download links are ready below.', 'success');
     showToast('✅ Payment verified! Downloads ready.');
     window.history.replaceState({}, '', window.location.pathname);
