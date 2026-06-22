@@ -866,7 +866,7 @@ async function startCheckout() {
     const resp = await fetch(API_BASE + '/api/create-checkout-session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify({ job_id: currentJobId, item_type: 'song', return_path: '/download' })
+      body: JSON.stringify({ job_id: currentJobId, item_type: 'song', return_path: '/' })
     });
     if (!resp.ok) {
       const e = await resp.json().catch(() => ({ detail: 'Checkout failed' }));
