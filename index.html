@@ -4,10 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>VocalSplitter — Free AI Vocal Remover & Stem Splitter</title>
-<meta name="description" content="Separate vocals from any song instantly with AI. Free 15-second preview — download the full song for $3. No subscription. No software needed.">
+<meta name="description" content="Separate vocals from any song instantly with AI. Free 15-second preview — download the full song for $0.99. No subscription. No software needed.">
 <meta name="keywords" content="vocal splitter, remove vocals, isolate vocals, acapella extractor, instrumental maker, AI stem separator, karaoke maker, vocal remover">
 <meta property="og:title" content="VocalSplitter — Free AI Vocal Remover">
-<meta property="og:description" content="Free 15-second vocal preview from any song. Download the full split for $3.">
+<meta property="og:description" content="Free 15-second vocal preview from any song. Download the full split for $0.99.">
 <meta property="og:url" content="https://vocalsplitter.app">
 <link rel="canonical" href="https://vocalsplitter.app">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -317,11 +317,11 @@
 
   <div class="eyebrow">Free AI Vocal Remover</div>
   <h1>Separate <span class="accent">vocals</span> from<br>any song — instantly.</h1>
-  <p class="hero-sub">Upload any track. Get a free 15-second vocal + instrumental preview. Download the full split for $3.</p>
+  <p class="hero-sub">Upload any track. Get a free 15-second vocal + instrumental preview. Download the full split for $0.99.</p>
 
   <div class="value-row">
     <div class="value-pill"><span class="dot"></span><strong>Free</strong> 15-sec preview</div>
-    <div class="value-pill"><span class="dot"></span><strong>$3</strong> full download</div>
+    <div class="value-pill"><span class="dot"></span><strong>$0.99</strong> full download</div>
     <div class="value-pill"><span class="dot"></span>No subscription</div>
     <div class="value-pill"><span class="dot"></span>No software</div>
   </div>
@@ -417,7 +417,7 @@
 <!-- RESULTS -->
 <div class="results" id="results">
   <div class="results-title">Your 15-second preview is ready 🎧</div>
-  <div class="results-sub">Listen to both stems below. Like what you hear? Download the full song split for $3 — one-time, no subscription.</div>
+  <div class="results-sub">Listen to both stems below. Like what you hear? Download the full song split for $0.99 — one-time, no subscription.</div>
   <div class="status-badge" id="fullStatusBadge" style="display:none;"><span class="pulse-dot"></span><span id="fullStatusText">Preparing full files…</span></div>
 
   <div class="stems-grid" id="stemsGrid"></div>
@@ -427,10 +427,10 @@
     <h3 id="downloadTitle">Download the full split</h3>
     <p id="downloadDescription">Get the complete vocal and instrumental tracks in your selected format. One-time payment, yours forever.</p>
     <div class="filename-note" id="resultFilename" style="display:none;"></div>
-    <div class="price-tag">$3</div>
+    <div class="price-tag">$0.99</div>
     <div class="price-note">One-time · No subscription · Selected format</div>
     <button class="btn-checkout" id="btnCheckout" onclick="startCheckout()">
-      Pay $3 AUD
+      Pay $0.99
     </button>
     <div class="checkout-note" id="checkoutNote">🔒 Secure checkout via Stripe</div>
     <div class="paid-downloads" id="paidDownloads">
@@ -463,7 +463,7 @@
     <div class="step">
       <div class="step-num">03</div>
       <h3>Preview free, pay to keep</h3>
-      <p>Like the result? Pay $3 to download the full-length vocals and instrumental. No subscription, ever.</p>
+      <p>Like the result? Pay $0.99 to download the full-length vocals and instrumental. No subscription, ever.</p>
     </div>
   </div>
 </section>
@@ -524,7 +524,7 @@
   </div>
   <div class="faq-item">
     <div class="faq-q" onclick="toggleFaq(this)">Is there a subscription? <span class="faq-chevron">›</span></div>
-    <div class="faq-a">No. You pay $3 per song when you want the full download. There are no monthly fees, no credits, and no subscription. If you only ever want the free preview you never have to pay anything.</div>
+    <div class="faq-a">No. You pay $0.99 per song when you want the full download. There are no monthly fees, no credits, and no subscription. If you only ever want the free preview you never have to pay anything.</div>
   </div>
   <div class="faq-item">
     <div class="faq-q" onclick="toggleFaq(this)">Is splitting copyrighted music legal? <span class="faq-chevron">›</span></div>
@@ -1302,7 +1302,7 @@ function renderPaymentAndDownloads(job) {
     hidePaymentSection('preview status is ' + (job.preview_status || 'undefined'));
     return;
   }
-  if (btn) { btn.style.display = ''; btn.textContent = 'Pay $3 AUD'; btn.disabled = !canPay(job); }
+  if (btn) { btn.style.display = ''; btn.textContent = 'Pay $0.99'; btn.disabled = !canPay(job); }
   if (note) note.style.display = '';
   if (wrap) wrap.classList.remove('show');
   console.log('Pay button enabled?', !!(btn && !btn.disabled), 'hidden?', !!(btn && btn.style.display === 'none'));
@@ -1405,7 +1405,7 @@ async function startCheckout() {
     setPaymentStatus(friendlyJobError(err), 'error');
     showToast(friendlyJobError(err));
   } finally {
-    btn.textContent = 'Pay $3 AUD';
+    btn.textContent = 'Pay $0.99';
     btn.disabled = !canPay();
   }
 }
