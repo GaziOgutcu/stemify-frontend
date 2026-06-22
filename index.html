@@ -638,12 +638,16 @@ onAuthStateChanged(auth, user => {
     document.getElementById('legalCheck').classList.remove('show');
     document.getElementById('splitOptions').classList.remove('show');
     document.getElementById('legalCb').checked = false;
+    const savedPaymentReturn = (() => { try { return JSON.parse(localStorage.getItem('vocalSplitterJob') || 'null')?.last_seen_status === 'payment_success_return'; } catch { return false; } })();
+    const isPaymentSuccessReturn = new URLSearchParams(window.location.search).get('payment') === 'success' || savedPaymentReturn;
     document.getElementById('paidDownloads').classList.remove('show');
-    document.getElementById('btnCheckout').style.display = '';
-    document.getElementById('checkoutNote').style.display = '';
+    if (!isPaymentSuccessReturn) {
+      document.getElementById('btnCheckout').style.display = '';
+      document.getElementById('checkoutNote').style.display = '';
+      if (window.clearPaymentStatus) window.clearPaymentStatus();
+    }
     document.getElementById('resultFilename').style.display = 'none';
     document.getElementById('paidMeta').classList.remove('show');
-    if (window.clearPaymentStatus) window.clearPaymentStatus();
     document.getElementById('dropzone').classList.add('locked');
     updateSplitBtn();
   }
@@ -676,6 +680,8 @@ let previewError = false;
 let previewValidationToken = 0;
 let restoredNotice = '';
 let previewPollStartedAt = null;
+let paymentReturnPending = false;
+let paymentReturnSessionId = '';
 const PROCESSING_MESSAGES = [
   'Uploading your song…',
   'Creating your 15-second preview…',
@@ -687,6 +693,58 @@ window._pendingPaymentReturn = false;
 
 // ── Helpers ──
 
+
+function getPaymentReturnParams() {
+  const params = new URLSearchParams(window.location.search);
+  return {
+    isSuccess: params.get('payment') === 'success',
+    sessionId: params.get('session_id') || '',
+    jobId: params.get('job_id') || ''
+  };
+}
+function cleanPaymentReturnUrl() {
+  const url = new URL(window.location.href);
+  ['payment', 'session_id', 'job_id'].forEach(key => url.searchParams.delete(key));
+  const next = url.pathname + (url.searchParams.toString() ? `?${url.searchParams}` : '') + url.hash;
+  window.history.replaceState({}, document.title, next);
+}
+function hideCheckoutForPaymentReturn(message = 'Payment confirmed — preparing your downloads…') {
+  const btn = document.getElementById('btnCheckout');
+  const note = document.getElementById('checkoutNote');
+  const wrap = document.getElementById('paidDownloads');
+  const check = document.getElementById('btnCheckStatus');
+  if (btn) { btn.disabled = true; btn.style.display = 'none'; }
+  if (note) note.style.display = 'none';
+  if (wrap) wrap.classList.remove('show');
+  if (check) check.style.display = '';
+  setPaymentStatus(message, 'success');
+}
+function handlePaymentSuccessReturn() {
+  const { isSuccess, sessionId, jobId } = getPaymentReturnParams();
+  if (!isSuccess || !jobId) return false;
+  paymentReturnPending = true;
+  paymentReturnSessionId = sessionId;
+  currentJobId = jobId;
+  const previous = loadJobState() || {};
+  localStorage.setItem(JOB_STATE_KEY, JSON.stringify({
+    ...previous,
+    job_id: jobId,
+    checkout_session_id: sessionId || previous.checkout_session_id || '',
+    last_seen_status: 'payment_success_return',
+    selected_format: previous.selected_format || selectedFormat
+  }));
+  cleanPaymentReturnUrl();
+  hideCheckoutForPaymentReturn('Payment confirmed — checking your download status…');
+  showPaymentConfirmed('Payment confirmed — preparing your downloads…', true);
+  document.getElementById('results').classList.add('show');
+  document.getElementById('processing').classList.remove('show');
+  ensureCheckStatusButton();
+  if (window._fbAuth?.currentUser) {
+    refreshJob({ silent: false });
+    startPolling();
+  }
+  return true;
+}
 function setLiveProcessingMessage(message) {
   const label = document.getElementById('processingLabel');
   const detail = document.getElementById('processingDetail');
@@ -1208,25 +1266,32 @@ function renderPaymentAndDownloads(job) {
   const grid = document.getElementById('paidDownloadGrid');
   const downloads = collectDownloadEntries(job);
   if (grid) grid.innerHTML = '';
-  if (isPreviewPending(job.preview_status) || job.preview_status === 'failed' || previewError || !previewPlayable || collectPreviewUrls(job).length === 0) {
+  const paidJob = job.payment_status === 'paid';
+  if (!paidJob && (isPreviewPending(job.preview_status) || job.preview_status === 'failed' || previewError || !previewPlayable || collectPreviewUrls(job).length === 0)) {
     hidePaymentSection('preview status is ' + (job.preview_status || 'undefined'));
     return;
   }
-  if (btn) { btn.style.display = ''; btn.textContent = 'Pay $3 AUD'; btn.disabled = !canPay(job); }
-  if (note) note.style.display = '';
   if (wrap) wrap.classList.remove('show');
+  if (paymentReturnPending && job.payment_status !== 'paid') {
+    hideCheckoutForPaymentReturn('Payment received. Confirming with Stripe…');
+    showPaymentConfirmed('Payment received. Confirming with Stripe…', true);
+    startPolling();
+    return;
+  }
   console.log('Pay button enabled?', !!(btn && !btn.disabled), 'hidden?', !!(btn && btn.style.display === 'none'));
 
   if (job.payment_status === 'paid' && job.full_processing_status === 'processing') {
     if (btn) btn.style.display = 'none';
     if (note) note.style.display = 'none';
     ensureCheckStatusButton();
-    showPaymentConfirmed('Final files are almost ready. Please keep this page open.', true);
-    setPaymentStatus('Payment confirmed ✓ Final files are almost ready. Please keep this page open.', 'success');
+    paymentReturnPending = false;
+    showPaymentConfirmed('Payment confirmed. Final files are almost ready.', true);
+    setPaymentStatus('Payment confirmed. Final files are almost ready.', 'success');
     startPolling();
   } else if (job.payment_status === 'paid' && job.full_processing_status === 'ready') {
-    showPaymentConfirmed('Your downloads are ready now.');
-    setPaymentStatus('Payment confirmed ✓ Your stems are ready. Downloads are available for 24 hours.', 'success');
+    paymentReturnPending = false;
+    showPaymentConfirmed('Your paid downloads are ready ✅');
+    setPaymentStatus('Your paid downloads are ready ✅ Downloads are available for 24 hours.', 'success');
     stopPolling();
     if (btn) btn.style.display = 'none';
     if (note) note.style.display = 'none';
@@ -1238,6 +1303,8 @@ function renderPaymentAndDownloads(job) {
     stopPolling();
   } else if (job.preview_status === 'ready') {
     hideWorkOverlay();
+    if (btn) { btn.style.display = ''; btn.textContent = 'Pay $3 AUD'; btn.disabled = !canPay(job); }
+    if (note) note.style.display = '';
     setPaymentStatus(restoredNotice || 'Preview ready. Your full split is being prepared in the background, so downloads can unlock faster after payment.');
     restoredNotice = '';
   }
@@ -1341,9 +1408,14 @@ window.restoreSavedJobOnLoad = function restoreSavedJobOnLoad() {
   if (!window._fbAuth?.currentUser) return;
   restoreLightweightState(state);
   previewPollStartedAt = Date.now();
-  restoredNotice = 'Restoring your previous upload...';
+  restoredNotice = paymentReturnPending
+    ? 'Payment confirmed — checking your download status…'
+    : 'Restoring your previous upload...';
+  if (paymentReturnPending) hideCheckoutForPaymentReturn(restoredNotice);
   refreshJob({ silent: false });
+  if (paymentReturnPending) startPolling();
 };
+handlePaymentSuccessReturn();
 window.restoreSavedJobOnLoad();
 // ── SMOOTH SCROLL ──
 document.querySelectorAll('a[href^="#"]').forEach(a => {
