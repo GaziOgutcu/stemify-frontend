@@ -94,6 +94,27 @@
   .drop-sub span { color:var(--violet-light); font-weight:500; }
   .formats { margin-top:10px; font-size:12px; color:#445; }
 
+  /* Split options */
+  .split-options { display:none; margin:18px 0 0; gap:14px; grid-template-columns:1fr 1fr; }
+  .split-options.show { display:grid; }
+  .option-card { background:rgba(109,40,217,0.07); border:1px solid var(--border); border-radius:14px; padding:16px; text-align:left; }
+  .option-card h3 { font-family:'Space Grotesk',sans-serif; font-size:14px; font-weight:700; margin-bottom:8px; color:var(--white); }
+  .segmented { display:grid; gap:8px; }
+  .segmented.quality { grid-template-columns:1fr; }
+  .segmented.format { grid-template-columns:1fr 1fr; }
+  .choice { position:relative; display:block; cursor:pointer; }
+  .choice input { position:absolute; opacity:0; pointer-events:none; }
+  .choice-body { display:block; height:100%; border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:10px 12px; background:rgba(255,255,255,0.035); transition:all 0.2s; }
+  .choice input:checked + .choice-body { border-color:var(--cyan); background:rgba(34,211,238,0.1); box-shadow:0 0 18px rgba(34,211,238,0.14); }
+  .choice-title { display:block; font-family:'Space Grotesk',sans-serif; font-size:13px; font-weight:700; color:var(--white); margin-bottom:4px; }
+  .choice-help { display:block; font-size:11px; color:var(--muted); line-height:1.45; }
+  .option-note { color:var(--muted); font-size:11px; line-height:1.5; margin-top:10px; }
+  .paid-meta { display:none; margin:8px 0 16px; padding:10px 12px; border-radius:10px; background:rgba(255,255,255,0.04); color:var(--muted); font-size:12px; line-height:1.6; }
+  .paid-meta.show { display:block; }
+  .paid-meta strong { color:var(--white); }
+  .paid-meta .format-warning { color:#FBBF24; display:none; }
+  .paid-meta .format-warning.show { display:block; margin-top:4px; }
+
   /* Legal checkbox */
   .legal-check { display:none; margin:18px 0 0; background:rgba(109,40,217,0.07); border:1px solid var(--border); border-radius:12px; padding:14px 18px; align-items:flex-start; gap:12px; cursor:pointer; transition:border-color 0.2s; }
   .legal-check:hover { border-color:var(--violet-light); }
@@ -236,6 +257,7 @@
     .nav-links { display:none; }
     footer { flex-direction:column; padding:32px 20px; }
     .stems-grid { grid-template-columns:1fr; }
+    .split-options { grid-template-columns:1fr; }
     .pricing-card { padding:28px 20px; }
   }
 </style>
@@ -312,6 +334,50 @@
       <div class="formats">MP3 · WAV · FLAC · AAC · OGG · M4A — up to 50MB</div>
     </div>
 
+    <div class="split-options" id="splitOptions">
+      <div class="option-card">
+        <h3>Quality</h3>
+        <div class="segmented quality" role="radiogroup" aria-label="Quality">
+          <label class="choice">
+            <input type="radio" name="quality" value="fast" checked onchange="handleOptionChange()">
+            <span class="choice-body">
+              <span class="choice-title">Fast</span>
+              <span class="choice-help">Best for quick previews. Usually ready in 20–60 seconds. Smaller files.</span>
+            </span>
+          </label>
+          <label class="choice">
+            <input type="radio" name="quality" value="high" onchange="handleOptionChange()">
+            <span class="choice-body">
+              <span class="choice-title">High Quality</span>
+              <span class="choice-help">Better separation and larger files. May take 2–8 minutes depending on song length and server load.</span>
+            </span>
+          </label>
+        </div>
+        <div class="option-note">Processing time depends on song length, file size, and server load.</div>
+      </div>
+
+      <div class="option-card">
+        <h3>Download format</h3>
+        <div class="segmented format" role="radiogroup" aria-label="Download format">
+          <label class="choice">
+            <input type="radio" name="outputFormat" value="mp3" checked onchange="handleOptionChange()">
+            <span class="choice-body">
+              <span class="choice-title">MP3</span>
+              <span class="choice-help">Smaller files, faster download.</span>
+            </span>
+          </label>
+          <label class="choice">
+            <input type="radio" name="outputFormat" value="wav" onchange="handleOptionChange()">
+            <span class="choice-body">
+              <span class="choice-title">WAV</span>
+              <span class="choice-help">Larger files, best quality.</span>
+            </span>
+          </label>
+        </div>
+        <div class="option-note">MP3 is smaller and easier to download. WAV is larger and better for editing or professional use.</div>
+      </div>
+    </div>
+
     <label class="legal-check" id="legalCheck" for="legalCb">
       <input type="checkbox" id="legalCb" onchange="updateSplitBtn()">
       <div class="legal-check-text">
@@ -345,10 +411,10 @@
   <div class="download-cta" id="downloadCta">
     <div class="payment-status" id="paymentStatus" role="status" aria-live="polite"></div>
     <h3 id="downloadTitle">Download the full split</h3>
-    <p id="downloadDescription">Get the complete vocal and instrumental tracks in full quality WAV. One-time payment, yours forever.</p>
+    <p id="downloadDescription">Get the complete vocal and instrumental tracks in your selected format. One-time payment, yours forever.</p>
     <div class="filename-note" id="resultFilename" style="display:none;"></div>
     <div class="price-tag">$3</div>
-    <div class="price-note">One-time · No subscription · Full quality WAV</div>
+    <div class="price-note">One-time · No subscription · Selected format</div>
     <button class="btn-checkout" id="btnCheckout" onclick="startCheckout()">
       Pay $3 &amp; Download Full Song
     </button>
@@ -356,6 +422,7 @@
     <div class="paid-downloads" id="paidDownloads">
       <h3>Your paid downloads are ready ✅</h3>
       <p>Download your full split below. Use the ZIP for the easiest one-click download.</p>
+      <div class="paid-meta" id="paidMeta"></div>
       <div class="paid-download-grid" id="paidDownloadGrid"></div>
     </div>
   </div>
@@ -541,6 +608,7 @@ onAuthStateChanged(auth, user => {
     // Show upload area
     document.getElementById('authGate').classList.remove('show');
     document.getElementById('legalCheck').classList.add('show');
+    document.getElementById('splitOptions').classList.add('show');
     document.getElementById('dropzone').classList.remove('locked');
     updateSplitBtn();
     if (window._pendingPaymentReturn && window.verifyStripeReturn) window.verifyStripeReturn();
@@ -553,6 +621,7 @@ onAuthStateChanged(auth, user => {
     document.getElementById('navLoggedIn').classList.remove('show');
     document.getElementById('authGate').classList.add('show');
     document.getElementById('legalCheck').classList.remove('show');
+    document.getElementById('splitOptions').classList.remove('show');
     document.getElementById('legalCb').checked = false;
     if (window._pendingPaymentReturn && window.setPaymentStatus) {
       window.setPaymentStatus('Payment received, but you are not signed in. Please sign in with the same Google account to unlock downloads.', 'error');
@@ -561,6 +630,7 @@ onAuthStateChanged(auth, user => {
       document.getElementById('btnCheckout').style.display = '';
       document.getElementById('checkoutNote').style.display = '';
       document.getElementById('resultFilename').style.display = 'none';
+      document.getElementById('paidMeta').classList.remove('show');
       if (window.clearPaymentStatus) window.clearPaymentStatus();
     }
     document.getElementById('dropzone').classList.add('locked');
@@ -586,6 +656,8 @@ let pollInterval = null;
 let fakeProgressInterval = null;
 let lastJobData = null;
 let paidDownloadUrls = {};
+let selectedQuality = 'fast';
+let selectedFormat = 'mp3';
 const JOB_STATE_KEY = 'vocalsplitter:lastJob';
 window._pendingPaymentReturn = new URLSearchParams(window.location.search).get('payment') === 'success';
 
@@ -613,6 +685,8 @@ function saveJobState(extra = {}) {
     stemUrls,
     stems: lastJobData?.stems || Object.keys(stemUrls),
     paidDownloadUrls,
+    quality: selectedQuality,
+    outputFormat: selectedFormat,
     savedAt: Date.now(),
     ...extra
   };
@@ -629,12 +703,44 @@ function restoreJobState(jobId) {
   stemUrls = state.stemUrls || {};
   paidDownloadUrls = state.paidDownloadUrls || {};
   lastJobData = { stems: state.stems || Object.keys(stemUrls), stem_urls: stemUrls };
+  selectedQuality = state.quality || state.selectedQuality || 'fast';
+  selectedFormat = state.outputFormat || state.selectedFormat || state.format || 'mp3';
+  setSelectedOptions(selectedQuality, selectedFormat);
   if (state.filename) {
     fileSelected = true;
     document.getElementById('dropTitle').textContent = '🎵 ' + state.filename;
     document.getElementById('splitBtn').textContent = 'Split "' + state.filename.slice(0,22) + (state.filename.length>22?'…':'') + '"';
   }
   return state;
+}
+function getSelectedQuality() {
+  return document.querySelector('input[name="quality"]:checked')?.value || selectedQuality || 'fast';
+}
+function getSelectedFormat() {
+  return document.querySelector('input[name="outputFormat"]:checked')?.value || selectedFormat || 'mp3';
+}
+function setSelectedOptions(quality = 'fast', format = 'mp3') {
+  selectedQuality = quality === 'high' ? 'high' : 'fast';
+  selectedFormat = format === 'wav' ? 'wav' : 'mp3';
+  const q = document.querySelector(`input[name="quality"][value="${selectedQuality}"]`);
+  const f = document.querySelector(`input[name="outputFormat"][value="${selectedFormat}"]`);
+  if (q) q.checked = true;
+  if (f) f.checked = true;
+}
+function handleOptionChange() {
+  selectedQuality = getSelectedQuality();
+  selectedFormat = getSelectedFormat();
+  if (currentJobId) saveJobState({ quality: selectedQuality, outputFormat: selectedFormat });
+}
+window.handleOptionChange = handleOptionChange;
+function qualityLabel(value = selectedQuality) { return value === 'high' ? 'High Quality' : 'Fast'; }
+function formatLabel(value = selectedFormat) { return (value === 'wav' ? 'WAV' : 'MP3'); }
+function renderPaidMeta() {
+  const el = document.getElementById('paidMeta');
+  if (!el) return;
+  const fmt = formatLabel();
+  el.innerHTML = `<div><strong>Quality:</strong> ${qualityLabel()}</div><div><strong>Format:</strong> ${fmt}</div><div class="format-warning${selectedFormat === 'wav' ? ' show' : ''}">WAV files are larger and may take longer to download.</div>`;
+  el.classList.add('show');
 }
 function updateSplitBtn() {
   const cb  = document.getElementById('legalCb');
@@ -647,6 +753,7 @@ function resetToUpload() {
   document.getElementById('results').classList.remove('show');
   localStorage.removeItem(JOB_STATE_KEY);
   currentJobId = null; stemUrls = {}; paidDownloadUrls = {}; lastJobData = null; fileSelected = false; currentFile = null;
+  setSelectedOptions('fast', 'mp3');
   document.getElementById('dropTitle').textContent = 'Drop your track here';
   document.getElementById('splitBtn').textContent  = 'Split Track — Free Preview';
   document.getElementById('legalCb').checked = false;
@@ -737,9 +844,14 @@ async function startProcessing() {
     // Get fresh Firebase ID token
     const idToken = await window._getIdToken();
 
+    selectedQuality = getSelectedQuality();
+    selectedFormat = getSelectedFormat();
+
     const fd = new FormData();
     fd.append('file', currentFile);
     fd.append('stems', '2'); // always 2 — vocals + instrumental
+    fd.append('quality', selectedQuality);
+    fd.append('output_format', selectedFormat);
 
     const resp = await fetch(API_BASE + '/api/split', {
       method: 'POST',
@@ -751,7 +863,7 @@ async function startProcessing() {
 
     const startData = await resp.json();
     currentJobId = startData.job_id;
-    saveJobState({ filename: currentFile?.name || '' });
+    saveJobState({ filename: currentFile?.name || '', quality: selectedQuality, outputFormat: selectedFormat });
 
     // Poll with timeout + live status_detail from backend
     const TIMEOUT = 10 * 60 * 1000;
@@ -787,7 +899,7 @@ async function startProcessing() {
     fill.style.width = '100%'; label.textContent = 'Done!'; detail.textContent = '';
     stemUrls = job.stem_urls || {};
     lastJobData = job;
-    saveJobState({ stems: job.stems || Object.keys(stemUrls), filename: currentFile?.name || '' });
+    saveJobState({ stems: job.stems || Object.keys(stemUrls), filename: currentFile?.name || '', quality: selectedQuality, outputFormat: selectedFormat });
     setTimeout(() => showResults(job), 500);
 
   } catch(err) {
@@ -851,7 +963,7 @@ function showResults(data) {
   });
 
   renderPaidDownloads(paidDownloadUrls);
-  saveJobState({ stems: stemNames, filename });
+  saveJobState({ stems: stemNames, filename, quality: selectedQuality, outputFormat: selectedFormat });
   document.getElementById('results').scrollIntoView({ behavior:'smooth', block:'start' });
   document.getElementById('splitBtn').disabled = false;
 }
@@ -863,7 +975,7 @@ async function startCheckout() {
   btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Preparing checkout…';
   try {
     const token = await window._getIdToken();
-    saveJobState({ filename: currentFile?.name || loadJobState()?.filename || '' });
+    saveJobState({ filename: currentFile?.name || loadJobState()?.filename || '', quality: selectedQuality, outputFormat: selectedFormat });
     const resp = await fetch(API_BASE + '/api/create-checkout-session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
@@ -891,17 +1003,24 @@ async function startCheckout() {
 function absoluteDownloadUrl(url) {
   if (!url) return '';
   if (/^https?:\/\//i.test(url)) return url;
-  return API_BASE + url;
+  return API_BASE + (String(url).startsWith('/') ? url : '/' + url);
 }
-function downloadFilename(key) {
+function getDownloadUrl(value) {
+  if (!value) return null;
+  if (typeof value === 'string') return value;
+  if (typeof value === 'object') return value.url || value.href || value.download_url || value.path || null;
+  return null;
+}
+function downloadFilename(key, value) {
+  if (value && typeof value === 'object' && typeof value.filename === 'string') return value.filename;
   const state = loadJobState();
   const base = (state?.filename || currentFile?.name || 'vocalsplitter')
     .replace(/\.[^/.]+$/, '')
     .replace(/[^a-z0-9_-]+/gi, '-')
     .replace(/^-+|-+$/g, '') || 'vocalsplitter';
   if (key === 'zip') return base + '-full-split.zip';
-  const cleanKey = key.replace(/[^a-z0-9_-]+/gi, '-');
-  return base + '-' + cleanKey + '.wav';
+  const cleanKey = String(key || 'stem').replace(/[^a-z0-9_-]+/gi, '-');
+  return base + '-' + cleanKey + '.' + selectedFormat;
 }
 async function downloadProtectedFile(url, filename, btn) {
   const originalText = btn?.textContent;
@@ -934,20 +1053,46 @@ async function downloadProtectedFile(url, filename, btn) {
     if (btn) { btn.disabled = false; btn.textContent = originalText; }
   }
 }
+function normaliseDownloadEntries(urls = {}) {
+  const entries = [];
+  if (urls.zip) entries.push({ key: 'zip', label: 'full ZIP', value: urls.zip, url: getDownloadUrl(urls.zip) });
+
+  const stems = urls.stems;
+  if (Array.isArray(stems)) {
+    stems.forEach((stem, i) => {
+      const name = stem?.name || stem?.stem || stem?.key || ('stem ' + (i + 1));
+      entries.push({ key: String(name), label: String(name).replace(/_/g, ' '), value: stem, url: getDownloadUrl(stem) });
+    });
+  } else if (stems && typeof stems === 'object') {
+    Object.entries(stems).forEach(([name, value]) => {
+      entries.push({ key: name, label: name.replace(/_/g, ' '), value, url: getDownloadUrl(value) });
+    });
+  }
+
+  Object.entries(urls).forEach(([key, value]) => {
+    if (key === 'zip' || key === 'stems') return;
+    entries.push({ key, label: key.replace(/_/g, ' '), value, url: getDownloadUrl(value) });
+  });
+
+  return entries.filter((entry, index, all) => entry.url && all.findIndex(other => other.url === entry.url) === index);
+}
 function renderPaidDownloads(urls = {}) {
   const wrap = document.getElementById('paidDownloads');
   const grid = document.getElementById('paidDownloadGrid');
-  if (!urls || !Object.keys(urls).length) { wrap.classList.remove('show'); return; }
+  const meta = document.getElementById('paidMeta');
+  if (!urls || !Object.keys(urls).length) { wrap.classList.remove('show'); meta?.classList.remove('show'); return; }
   paidDownloadUrls = urls;
   grid.innerHTML = '';
-  const ordered = Object.entries(urls).sort(([a], [b]) => (a === 'zip' ? -1 : b === 'zip' ? 1 : a.localeCompare(b)));
-  ordered.forEach(([key, url]) => {
+  const entries = normaliseDownloadEntries(urls);
+  if (!entries.length) { wrap.classList.remove('show'); meta?.classList.remove('show'); return; }
+  renderPaidMeta();
+  entries.forEach(({ key, label, value, url }) => {
     if (!url) return;
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'paid-download-btn' + (key === 'zip' ? ' primary' : '');
-    btn.textContent = key === 'zip' ? '⬇ Download full ZIP' : '⬇ Download ' + key.replace(/_/g, ' ');
-    btn.addEventListener('click', () => downloadProtectedFile(url, downloadFilename(key), btn));
+    btn.textContent = key === 'zip' ? '⬇ Download full ZIP' : '⬇ Download ' + label;
+    btn.addEventListener('click', () => downloadProtectedFile(url, downloadFilename(key, value), btn));
     grid.appendChild(btn);
   });
   document.getElementById('btnCheckout').style.display = 'none';
@@ -1001,8 +1146,12 @@ window.verifyStripeReturn = async function verifyStripeReturn() {
     const data = await resp.json();
     const urls = data.download_urls || {};
     if (!Object.keys(urls).length) throw new Error('Payment verified, but no download links were returned.');
+    selectedQuality = data.quality || data.processing_quality || selectedQuality;
+    selectedFormat = data.output_format || data.format || selectedFormat;
+    setSelectedOptions(selectedQuality, selectedFormat);
     paidDownloadUrls = urls;
     currentJobId = jobId;
+    renderPaidMeta();
     renderPaidDownloads(urls);
     setPaymentStatus('Payment successful — your full download links are ready below.', 'success');
     showToast('✅ Payment verified! Downloads ready.');
