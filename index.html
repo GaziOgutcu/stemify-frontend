@@ -616,7 +616,7 @@ onAuthStateChanged(auth, user => {
 <script>
 // ══════════════════════════════════════════════════════════
 // CONFIG
-const API_BASE = 'https://stemify-backend-production.up.railway.app';
+const API_BASE_URL = 'https://stemify-backend-production.up.railway.app';
 const JOB_STATE_KEY = 'vocalSplitterJob';
 const POLL_MS = 4000;
 const PREVIEW_TIMEOUT_MS = 2 * 60 * 1000;
@@ -728,6 +728,12 @@ function restoreLightweightState(state) {
   }
 }
 
+
+function toApiUrl(url) {
+  if (!url) return '';
+  if (/^https?:\/\//i.test(url)) return url;
+  return `${API_BASE_URL}${url.startsWith('/') ? url : `/${url}`}`;
+}
 function normalizeUrl(value) {
   if (!value) return null;
   if (typeof value === 'string') return value;
@@ -903,7 +909,7 @@ async function startProcessing() {
     fd.append('file', currentFile);
     fd.append('stems', '2');
     fd.append('output_format', selectedFormat);
-    const startData = await fetchJson(API_BASE + '/api/split', { method: 'POST', headers: await authHeaders(), body: fd });
+    const startData = await fetchJson(API_BASE_URL + '/api/split', { method: 'POST', headers: await authHeaders(), body: fd });
     console.log('/api/split response', startData);
     label.textContent = 'Creating your 15-second preview...';
     detail.textContent = 'Creating your 15-second preview...';
@@ -1035,6 +1041,8 @@ async function renderPreviewSection(job) {
     return;
   }
   previews.forEach(({ key, url }, i) => {
+    const resolvedUrl = toApiUrl(url);
+    console.log('resolved preview url', url, resolvedUrl);
     const def = STEM_DISPLAY[key] || { name: key.replace(/_/g, ' '), icon:'🎵', color:'#8B5CF6', key:'15-sec preview' };
     const durationEntries = getPreviewDurationEntries(job);
     const backendDuration = durationEntries.find(d => d.key === key)?.duration ?? durationEntries[i]?.duration;
@@ -1045,7 +1053,7 @@ async function renderPreviewSection(job) {
         <div><div class="stem-name">${safeText(def.name)}</div><div class="stem-key">${safeText(def.key)} · 15-sec preview${backendDuration ? ` · ${backendDuration.toFixed(1)}s` : ''}</div></div>
       </div>
       <div class="mini-wave" id="mw${i}"></div>
-      <audio controls preload="metadata" src="${safeText(url)}" style="width:100%;"></audio>`;
+      <audio controls preload="metadata" src="${safeText(resolvedUrl)}" style="width:100%;"></audio>`;
     grid.appendChild(card);
     const audio = card.querySelector('audio');
     ['error', 'stalled', 'abort'].forEach(type => audio.addEventListener(type, handlePreviewAudioError));
@@ -1113,7 +1121,7 @@ function renderDownloadButtons(entries) {
   entries.sort((a,b) => (a.key === 'zip' ? -1 : b.key === 'zip' ? 1 : 0)).forEach(entry => {
     const a = document.createElement('a');
     a.className = 'paid-download-btn' + (entry.key === 'zip' ? ' primary' : '');
-    a.href = entry.url;
+    a.href = toApiUrl(entry.url);
     a.target = '_blank';
     a.rel = 'noopener';
     a.textContent = entry.key === 'zip' ? '⬇ Download ZIP' : '⬇ Download ' + entry.label;
@@ -1134,7 +1142,7 @@ function buildMiniWave(i, color) {
 async function refreshJob({ silent = false } = {}) {
   if (!currentJobId) return;
   try {
-    const job = await fetchJson(API_BASE + '/api/job/' + encodeURIComponent(currentJobId), { headers: await authHeaders() });
+    const job = await fetchJson(API_BASE_URL + '/api/job/' + encodeURIComponent(currentJobId), { headers: await authHeaders() });
     console.log('/api/job response', job);
     applyJobToUi(job);
   } catch (err) {
@@ -1156,7 +1164,7 @@ async function startCheckout() {
   const btn = document.getElementById('btnCheckout');
   btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Preparing checkout…';
   try {
-    const data = await fetchJson(API_BASE + '/api/create-checkout-session', {
+    const data = await fetchJson(API_BASE_URL + '/api/create-checkout-session', {
       method: 'POST',
       headers: await authHeaders(true),
       body: JSON.stringify({ job_id: currentJobId })
