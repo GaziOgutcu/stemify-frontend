@@ -676,6 +676,7 @@ let previewError = false;
 let previewValidationToken = 0;
 let restoredNotice = '';
 let previewPollStartedAt = null;
+let paymentReturnActive = false;
 const PROCESSING_MESSAGES = [
   'Uploading your song…',
   'Creating your 15-second preview…',
@@ -822,6 +823,35 @@ function loadJobState() {
 function clearJobState() { localStorage.removeItem(JOB_STATE_KEY); }
 function summarizeStatus(job = {}) {
   return [job.preview_status, job.payment_status, job.full_processing_status].filter(Boolean).join('/');
+}
+function isPaymentSuccessReturnUrl() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('payment') === 'success' && !!params.get('session_id') && !!params.get('job_id');
+}
+function hidePayDueToPaymentReturn() {
+  const btn = document.getElementById('btnCheckout');
+  const note = document.getElementById('checkoutNote');
+  if (btn) { btn.disabled = true; btn.style.display = 'none'; }
+  if (note) note.style.display = 'none';
+  console.log('Pay hidden due to payment return');
+}
+function activatePaymentReturnFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const jobId = params.get('job_id');
+  const sessionId = params.get('session_id');
+  if (params.get('payment') !== 'success' || !jobId || !sessionId) return false;
+  paymentReturnActive = true;
+  window._pendingPaymentReturn = true;
+  currentJobId = jobId;
+  saveJobState({ job_id: jobId, checkout_session_id: sessionId });
+  hidePayDueToPaymentReturn();
+  setPaymentStatus('Payment confirmed — checking your download status…', 'success');
+  startPolling();
+  refreshJob({ silent: true });
+  const cleanUrl = window.location.pathname + window.location.hash;
+  history.replaceState({}, document.title, cleanUrl);
+  console.log('paymentReturnActive', paymentReturnActive);
+  return true;
 }
 function restoreLightweightState(state) {
   if (!state?.job_id) return;
@@ -1066,8 +1096,16 @@ function applyJobToUi(job) {
   currentJobId = currentJob.job_id || currentJobId;
   saveJobState({ job: currentJob });
   console.log('preview_status', currentJob.preview_status);
+  console.log('paymentReturnActive', paymentReturnActive);
+  console.log('job.payment_status', currentJob.payment_status);
+  console.log('job.full_processing_status', currentJob.full_processing_status);
   logPreviewDurationMetadata(currentJob);
   updateFullStatusBadge(currentJob);
+
+  if (paymentReturnActive || currentJob.payment_status === 'paid') {
+    renderPaymentAndDownloads(currentJob);
+    return;
+  }
 
   if (isPreviewPending(currentJob.preview_status)) {
     previewPlayable = false;
@@ -1208,6 +1246,58 @@ function renderPaymentAndDownloads(job) {
   const grid = document.getElementById('paidDownloadGrid');
   const downloads = collectDownloadEntries(job);
   if (grid) grid.innerHTML = '';
+  console.log('paymentReturnActive', paymentReturnActive);
+  console.log('job.payment_status', job.payment_status);
+  console.log('job.full_processing_status', job.full_processing_status);
+
+  if (paymentReturnActive || job.payment_status === 'paid') {
+    console.log('Skipping unpaid pay branch due to payment return');
+    hidePayDueToPaymentReturn();
+    if (wrap) wrap.classList.remove('show');
+
+    if (job.payment_status !== 'paid') {
+      setPaymentStatus('Payment received. Confirming with Stripe…', 'success');
+      startPolling();
+      return;
+    }
+
+    if (job.full_processing_status === 'ready') {
+      setPaymentStatus('Your paid downloads are ready ✅', 'success');
+      renderDownloadButtons(downloads);
+      if (downloads.length) {
+        stopPolling();
+        paymentReturnActive = false;
+        window._pendingPaymentReturn = false;
+        console.log('paymentReturnActive', paymentReturnActive);
+      } else {
+        startPolling();
+      }
+      return;
+    }
+
+    if (job.full_processing_status === 'processing') {
+      setPaymentStatus('Payment confirmed. Final files are almost ready.', 'success');
+      startPolling();
+      return;
+    }
+
+    if (job.full_processing_status === 'failed') {
+      setPaymentStatus('Payment confirmed, but file preparation failed. Please contact support.', 'error');
+      stopPolling();
+      return;
+    }
+
+    setPaymentStatus('Payment confirmed — checking your download status…', 'success');
+    startPolling();
+    return;
+  }
+
+  if (isPaymentSuccessReturnUrl()) {
+    console.log('Skipping unpaid pay branch due to payment return');
+    hidePayDueToPaymentReturn();
+    return;
+  }
+
   if (isPreviewPending(job.preview_status) || job.preview_status === 'failed' || previewError || !previewPlayable || collectPreviewUrls(job).length === 0) {
     hidePaymentSection('preview status is ' + (job.preview_status || 'undefined'));
     return;
@@ -1341,9 +1431,12 @@ window.restoreSavedJobOnLoad = function restoreSavedJobOnLoad() {
   if (!window._fbAuth?.currentUser) return;
   restoreLightweightState(state);
   previewPollStartedAt = Date.now();
-  restoredNotice = 'Restoring your previous upload...';
-  refreshJob({ silent: false });
+  if (!paymentReturnActive) {
+    restoredNotice = 'Restoring your previous upload...';
+  }
+  refreshJob({ silent: paymentReturnActive });
 };
+activatePaymentReturnFromUrl();
 window.restoreSavedJobOnLoad();
 // ── SMOOTH SCROLL ──
 document.querySelectorAll('a[href^="#"]').forEach(a => {
