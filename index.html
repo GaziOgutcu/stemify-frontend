@@ -95,12 +95,11 @@
   .formats { margin-top:10px; font-size:12px; color:#445; }
 
   /* Split options */
-  .split-options { display:none; margin:18px 0 0; gap:14px; grid-template-columns:1fr 1fr; }
+  .split-options { display:none; margin:18px 0 0; gap:14px; grid-template-columns:1fr; }
   .split-options.show { display:grid; }
   .option-card { background:rgba(109,40,217,0.07); border:1px solid var(--border); border-radius:14px; padding:16px; text-align:left; }
   .option-card h3 { font-family:'Space Grotesk',sans-serif; font-size:14px; font-weight:700; margin-bottom:8px; color:var(--white); }
   .segmented { display:grid; gap:8px; }
-  .segmented.quality { grid-template-columns:1fr; }
   .segmented.format { grid-template-columns:1fr 1fr; }
   .choice { position:relative; display:block; cursor:pointer; }
   .choice input { position:absolute; opacity:0; pointer-events:none; }
@@ -335,27 +334,6 @@
     </div>
 
     <div class="split-options" id="splitOptions">
-      <div class="option-card">
-        <h3>Quality</h3>
-        <div class="segmented quality" role="radiogroup" aria-label="Quality">
-          <label class="choice">
-            <input type="radio" name="quality" value="fast" checked onchange="handleOptionChange()">
-            <span class="choice-body">
-              <span class="choice-title">Fast</span>
-              <span class="choice-help">Best for quick previews. Usually ready in 20–60 seconds. Smaller files.</span>
-            </span>
-          </label>
-          <label class="choice">
-            <input type="radio" name="quality" value="high" onchange="handleOptionChange()">
-            <span class="choice-body">
-              <span class="choice-title">High Quality</span>
-              <span class="choice-help">Better separation and larger files. May take 2–8 minutes depending on song length and server load.</span>
-            </span>
-          </label>
-        </div>
-        <div class="option-note">Processing time depends on song length, file size, and server load.</div>
-      </div>
-
       <div class="option-card">
         <h3>Download format</h3>
         <div class="segmented format" role="radiogroup" aria-label="Download format">
@@ -656,7 +634,6 @@ let pollInterval = null;
 let fakeProgressInterval = null;
 let lastJobData = null;
 let paidDownloadUrls = {};
-let selectedQuality = 'fast';
 let selectedFormat = 'mp3';
 const JOB_STATE_KEY = 'vocalsplitter:lastJob';
 window._pendingPaymentReturn = new URLSearchParams(window.location.search).get('payment') === 'success';
@@ -685,7 +662,6 @@ function saveJobState(extra = {}) {
     stemUrls,
     stems: lastJobData?.stems || Object.keys(stemUrls),
     paidDownloadUrls,
-    quality: selectedQuality,
     outputFormat: selectedFormat,
     savedAt: Date.now(),
     ...extra
@@ -703,9 +679,8 @@ function restoreJobState(jobId) {
   stemUrls = state.stemUrls || {};
   paidDownloadUrls = state.paidDownloadUrls || {};
   lastJobData = { stems: state.stems || Object.keys(stemUrls), stem_urls: stemUrls };
-  selectedQuality = state.quality || state.selectedQuality || 'fast';
   selectedFormat = state.outputFormat || state.selectedFormat || state.format || 'mp3';
-  setSelectedOptions(selectedQuality, selectedFormat);
+  setSelectedOptions(selectedFormat);
   if (state.filename) {
     fileSelected = true;
     document.getElementById('dropTitle').textContent = '🎵 ' + state.filename;
@@ -713,33 +688,25 @@ function restoreJobState(jobId) {
   }
   return state;
 }
-function getSelectedQuality() {
-  return document.querySelector('input[name="quality"]:checked')?.value || selectedQuality || 'fast';
-}
 function getSelectedFormat() {
   return document.querySelector('input[name="outputFormat"]:checked')?.value || selectedFormat || 'mp3';
 }
-function setSelectedOptions(quality = 'fast', format = 'mp3') {
-  selectedQuality = quality === 'high' ? 'high' : 'fast';
+function setSelectedOptions(format = 'mp3') {
   selectedFormat = format === 'wav' ? 'wav' : 'mp3';
-  const q = document.querySelector(`input[name="quality"][value="${selectedQuality}"]`);
   const f = document.querySelector(`input[name="outputFormat"][value="${selectedFormat}"]`);
-  if (q) q.checked = true;
   if (f) f.checked = true;
 }
 function handleOptionChange() {
-  selectedQuality = getSelectedQuality();
   selectedFormat = getSelectedFormat();
-  if (currentJobId) saveJobState({ quality: selectedQuality, outputFormat: selectedFormat });
+  if (currentJobId) saveJobState({ outputFormat: selectedFormat });
 }
 window.handleOptionChange = handleOptionChange;
-function qualityLabel(value = selectedQuality) { return value === 'high' ? 'High Quality' : 'Fast'; }
 function formatLabel(value = selectedFormat) { return (value === 'wav' ? 'WAV' : 'MP3'); }
 function renderPaidMeta() {
   const el = document.getElementById('paidMeta');
   if (!el) return;
   const fmt = formatLabel();
-  el.innerHTML = `<div><strong>Quality:</strong> ${qualityLabel()}</div><div><strong>Format:</strong> ${fmt}</div><div class="format-warning${selectedFormat === 'wav' ? ' show' : ''}">WAV files are larger and may take longer to download.</div>`;
+  el.innerHTML = `<div><strong>Format:</strong> ${fmt}</div><div class="format-warning${selectedFormat === 'wav' ? ' show' : ''}">WAV files are larger and may take longer to download.</div>`;
   el.classList.add('show');
 }
 function updateSplitBtn() {
@@ -753,7 +720,7 @@ function resetToUpload() {
   document.getElementById('results').classList.remove('show');
   localStorage.removeItem(JOB_STATE_KEY);
   currentJobId = null; stemUrls = {}; paidDownloadUrls = {}; lastJobData = null; fileSelected = false; currentFile = null;
-  setSelectedOptions('fast', 'mp3');
+  setSelectedOptions('mp3');
   document.getElementById('dropTitle').textContent = 'Drop your track here';
   document.getElementById('splitBtn').textContent  = 'Split Track — Free Preview';
   document.getElementById('legalCb').checked = false;
@@ -844,13 +811,11 @@ async function startProcessing() {
     // Get fresh Firebase ID token
     const idToken = await window._getIdToken();
 
-    selectedQuality = getSelectedQuality();
     selectedFormat = getSelectedFormat();
 
     const fd = new FormData();
     fd.append('file', currentFile);
     fd.append('stems', '2'); // always 2 — vocals + instrumental
-    fd.append('quality', selectedQuality);
     fd.append('output_format', selectedFormat);
 
     const resp = await fetch(API_BASE + '/api/split', {
@@ -863,7 +828,7 @@ async function startProcessing() {
 
     const startData = await resp.json();
     currentJobId = startData.job_id;
-    saveJobState({ filename: currentFile?.name || '', quality: selectedQuality, outputFormat: selectedFormat });
+    saveJobState({ filename: currentFile?.name || '', outputFormat: selectedFormat });
 
     // Poll with timeout + live status_detail from backend
     const TIMEOUT = 10 * 60 * 1000;
@@ -899,7 +864,7 @@ async function startProcessing() {
     fill.style.width = '100%'; label.textContent = 'Done!'; detail.textContent = '';
     stemUrls = job.stem_urls || {};
     lastJobData = job;
-    saveJobState({ stems: job.stems || Object.keys(stemUrls), filename: currentFile?.name || '', quality: selectedQuality, outputFormat: selectedFormat });
+    saveJobState({ stems: job.stems || Object.keys(stemUrls), filename: currentFile?.name || '', outputFormat: selectedFormat });
     setTimeout(() => showResults(job), 500);
 
   } catch(err) {
@@ -963,7 +928,7 @@ function showResults(data) {
   });
 
   renderPaymentSection(paidDownloadUrls);
-  saveJobState({ stems: stemNames, filename, quality: selectedQuality, outputFormat: selectedFormat });
+  saveJobState({ stems: stemNames, filename, outputFormat: selectedFormat });
   document.getElementById('results').scrollIntoView({ behavior:'smooth', block:'start' });
   document.getElementById('splitBtn').disabled = false;
 }
@@ -975,7 +940,7 @@ async function startCheckout() {
   btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Preparing checkout…';
   try {
     const token = await window._getIdToken();
-    saveJobState({ filename: currentFile?.name || loadJobState()?.filename || '', quality: selectedQuality, outputFormat: selectedFormat });
+    saveJobState({ filename: currentFile?.name || loadJobState()?.filename || '', outputFormat: selectedFormat });
     const resp = await fetch(API_BASE + '/api/create-checkout-session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
@@ -1179,9 +1144,8 @@ window.verifyStripeReturn = async function verifyStripeReturn() {
     const data = await resp.json();
     const urls = data.download_urls || {};
     if (!Object.keys(urls).length) throw new Error('Payment verified, but no download links were returned.');
-    selectedQuality = data.quality || data.processing_quality || selectedQuality;
     selectedFormat = data.output_format || data.format || selectedFormat;
-    setSelectedOptions(selectedQuality, selectedFormat);
+    setSelectedOptions(selectedFormat);
     paidDownloadUrls = urls;
     currentJobId = jobId;
     renderPaymentSection(urls);
