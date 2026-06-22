@@ -94,6 +94,27 @@
   .drop-sub span { color:var(--violet-light); font-weight:500; }
   .formats { margin-top:10px; font-size:12px; color:#445; }
 
+  /* Split options */
+  .split-options { display:none; margin:18px 0 0; gap:14px; grid-template-columns:1fr 1fr; }
+  .split-options.show { display:grid; }
+  .option-card { background:rgba(109,40,217,0.07); border:1px solid var(--border); border-radius:14px; padding:16px; text-align:left; }
+  .option-card h3 { font-family:'Space Grotesk',sans-serif; font-size:14px; font-weight:700; margin-bottom:8px; color:var(--white); }
+  .segmented { display:grid; gap:8px; }
+  .segmented.quality { grid-template-columns:1fr; }
+  .segmented.format { grid-template-columns:1fr 1fr; }
+  .choice { position:relative; display:block; cursor:pointer; }
+  .choice input { position:absolute; opacity:0; pointer-events:none; }
+  .choice-body { display:block; height:100%; border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:10px 12px; background:rgba(255,255,255,0.035); transition:all 0.2s; }
+  .choice input:checked + .choice-body { border-color:var(--cyan); background:rgba(34,211,238,0.1); box-shadow:0 0 18px rgba(34,211,238,0.14); }
+  .choice-title { display:block; font-family:'Space Grotesk',sans-serif; font-size:13px; font-weight:700; color:var(--white); margin-bottom:4px; }
+  .choice-help { display:block; font-size:11px; color:var(--muted); line-height:1.45; }
+  .option-note { color:var(--muted); font-size:11px; line-height:1.5; margin-top:10px; }
+  .paid-meta { display:none; margin:8px 0 16px; padding:10px 12px; border-radius:10px; background:rgba(255,255,255,0.04); color:var(--muted); font-size:12px; line-height:1.6; }
+  .paid-meta.show { display:block; }
+  .paid-meta strong { color:var(--white); }
+  .paid-meta .format-warning { color:#FBBF24; display:none; }
+  .paid-meta .format-warning.show { display:block; margin-top:4px; }
+
   /* Legal checkbox */
   .legal-check { display:none; margin:18px 0 0; background:rgba(109,40,217,0.07); border:1px solid var(--border); border-radius:12px; padding:14px 18px; align-items:flex-start; gap:12px; cursor:pointer; transition:border-color 0.2s; }
   .legal-check:hover { border-color:var(--violet-light); }
@@ -147,6 +168,19 @@
   .btn-checkout:hover { transform:translateY(-1px); box-shadow:0 0 44px rgba(109,40,217,0.7); }
   .btn-checkout:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
   .checkout-note { font-size:11px; color:var(--muted); display:flex; align-items:center; justify-content:center; gap:5px; }
+  .payment-status { display:none; margin:0 0 18px; padding:12px 14px; border-radius:12px; border:1px solid var(--border); background:rgba(109,40,217,0.08); color:var(--muted); font-size:13px; line-height:1.5; }
+  .payment-status.show { display:block; }
+  .payment-status.success { border-color:rgba(16,185,129,0.35); background:rgba(16,185,129,0.1); color:#A7F3D0; }
+  .payment-status.error { border-color:rgba(239,68,68,0.35); background:rgba(239,68,68,0.08); color:#FCA5A5; }
+  .paid-downloads { display:none; margin-top:18px; }
+  .paid-downloads.show { display:block; }
+  .paid-download-grid { display:grid; grid-template-columns:1fr; gap:10px; margin-top:12px; }
+  .paid-download-btn { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; padding:13px 16px; border-radius:12px; border:1px solid rgba(34,211,238,0.35); background:rgba(34,211,238,0.1); color:var(--white); text-decoration:none; font-family:'Space Grotesk',sans-serif; font-size:15px; font-weight:600; transition:all 0.2s; cursor:pointer; }
+  .paid-download-btn:hover { border-color:var(--cyan); background:rgba(34,211,238,0.18); transform:translateY(-1px); }
+  .paid-download-btn.primary { background:linear-gradient(135deg,var(--green),#0f766e); border-color:rgba(16,185,129,0.55); box-shadow:0 0 28px rgba(16,185,129,0.28); }
+  .paid-download-btn.primary:hover { box-shadow:0 0 40px rgba(16,185,129,0.38); }
+  .paid-download-btn:disabled { opacity:0.6; cursor:not-allowed; transform:none; box-shadow:none; }
+  .filename-note { color:var(--muted); font-size:12px; margin-bottom:16px; }
 
   /* Split again */
   .btn-split-again { margin-top:16px; background:transparent; border:1px solid var(--border); color:var(--muted); padding:10px 24px; border-radius:10px; font-family:inherit; font-size:14px; cursor:pointer; transition:all 0.2s; }
@@ -223,6 +257,7 @@
     .nav-links { display:none; }
     footer { flex-direction:column; padding:32px 20px; }
     .stems-grid { grid-template-columns:1fr; }
+    .split-options { grid-template-columns:1fr; }
     .pricing-card { padding:28px 20px; }
   }
 </style>
@@ -299,6 +334,50 @@
       <div class="formats">MP3 · WAV · FLAC · AAC · OGG · M4A — up to 50MB</div>
     </div>
 
+    <div class="split-options" id="splitOptions">
+      <div class="option-card">
+        <h3>Quality</h3>
+        <div class="segmented quality" role="radiogroup" aria-label="Quality">
+          <label class="choice">
+            <input type="radio" name="quality" value="fast" checked onchange="handleOptionChange()">
+            <span class="choice-body">
+              <span class="choice-title">Fast</span>
+              <span class="choice-help">Best for quick previews. Usually ready in 20–60 seconds. Smaller files.</span>
+            </span>
+          </label>
+          <label class="choice">
+            <input type="radio" name="quality" value="high" onchange="handleOptionChange()">
+            <span class="choice-body">
+              <span class="choice-title">High Quality</span>
+              <span class="choice-help">Better separation and larger files. May take 2–8 minutes depending on song length and server load.</span>
+            </span>
+          </label>
+        </div>
+        <div class="option-note">Processing time depends on song length, file size, and server load.</div>
+      </div>
+
+      <div class="option-card">
+        <h3>Download format</h3>
+        <div class="segmented format" role="radiogroup" aria-label="Download format">
+          <label class="choice">
+            <input type="radio" name="outputFormat" value="mp3" checked onchange="handleOptionChange()">
+            <span class="choice-body">
+              <span class="choice-title">MP3</span>
+              <span class="choice-help">Smaller files, faster download.</span>
+            </span>
+          </label>
+          <label class="choice">
+            <input type="radio" name="outputFormat" value="wav" onchange="handleOptionChange()">
+            <span class="choice-body">
+              <span class="choice-title">WAV</span>
+              <span class="choice-help">Larger files, best quality.</span>
+            </span>
+          </label>
+        </div>
+        <div class="option-note">MP3 is smaller and easier to download. WAV is larger and better for editing or professional use.</div>
+      </div>
+    </div>
+
     <label class="legal-check" id="legalCheck" for="legalCb">
       <input type="checkbox" id="legalCb" onchange="updateSplitBtn()">
       <div class="legal-check-text">
@@ -330,14 +409,22 @@
   <div class="stems-grid" id="stemsGrid"></div>
 
   <div class="download-cta" id="downloadCta">
-    <h3>Download the full split</h3>
-    <p>Get the complete vocal and instrumental tracks in full quality WAV. One-time payment, yours forever.</p>
+    <div class="payment-status" id="paymentStatus" role="status" aria-live="polite"></div>
+    <h3 id="downloadTitle">Download the full split</h3>
+    <p id="downloadDescription">Get the complete vocal and instrumental tracks in your selected format. One-time payment, yours forever.</p>
+    <div class="filename-note" id="resultFilename" style="display:none;"></div>
     <div class="price-tag">$3</div>
-    <div class="price-note">One-time · No subscription · Full quality WAV</div>
+    <div class="price-note">One-time · No subscription · Selected format</div>
     <button class="btn-checkout" id="btnCheckout" onclick="startCheckout()">
       Pay $3 &amp; Download Full Song
     </button>
-    <div class="checkout-note">🔒 Secure checkout via Stripe</div>
+    <div class="checkout-note" id="checkoutNote">🔒 Secure checkout via Stripe</div>
+    <div class="paid-downloads" id="paidDownloads">
+      <h3>Your paid downloads are ready ✅</h3>
+      <p>Download your full split below. Use the ZIP for the easiest one-click download.</p>
+      <div class="paid-meta" id="paidMeta"></div>
+      <div class="paid-download-grid" id="paidDownloadGrid"></div>
+    </div>
   </div>
 
   <button class="btn-split-again" onclick="resetToUpload()">↩ Split another song</button>
@@ -521,8 +608,10 @@ onAuthStateChanged(auth, user => {
     // Show upload area
     document.getElementById('authGate').classList.remove('show');
     document.getElementById('legalCheck').classList.add('show');
+    document.getElementById('splitOptions').classList.add('show');
     document.getElementById('dropzone').classList.remove('locked');
     updateSplitBtn();
+    if (window._pendingPaymentReturn && window.verifyStripeReturn) window.verifyStripeReturn();
   } else {
     // Logged out state
     const btn = document.getElementById('navSignInBtn');
@@ -532,7 +621,18 @@ onAuthStateChanged(auth, user => {
     document.getElementById('navLoggedIn').classList.remove('show');
     document.getElementById('authGate').classList.add('show');
     document.getElementById('legalCheck').classList.remove('show');
+    document.getElementById('splitOptions').classList.remove('show');
     document.getElementById('legalCb').checked = false;
+    if (window._pendingPaymentReturn && window.setPaymentStatus) {
+      window.setPaymentStatus('Payment received, but you are not signed in. Please sign in with the same Google account to unlock downloads.', 'error');
+    } else {
+      document.getElementById('paidDownloads').classList.remove('show');
+      document.getElementById('btnCheckout').style.display = '';
+      document.getElementById('checkoutNote').style.display = '';
+      document.getElementById('resultFilename').style.display = 'none';
+      document.getElementById('paidMeta').classList.remove('show');
+      if (window.clearPaymentStatus) window.clearPaymentStatus();
+    }
     document.getElementById('dropzone').classList.add('locked');
     updateSplitBtn();
   }
@@ -554,12 +654,93 @@ let audioObjects = {};
 let splitMode    = false;
 let pollInterval = null;
 let fakeProgressInterval = null;
+let lastJobData = null;
+let paidDownloadUrls = {};
+let selectedQuality = 'fast';
+let selectedFormat = 'mp3';
+const JOB_STATE_KEY = 'vocalsplitter:lastJob';
+window._pendingPaymentReturn = new URLSearchParams(window.location.search).get('payment') === 'success';
 
 // ── Helpers ──
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 3400);
+}
+window.setPaymentStatus = function setPaymentStatus(msg, type = '') {
+  const el = document.getElementById('paymentStatus');
+  el.textContent = msg;
+  el.className = 'payment-status show' + (type ? ' ' + type : '');
+};
+window.clearPaymentStatus = function clearPaymentStatus() {
+  const el = document.getElementById('paymentStatus');
+  el.textContent = '';
+  el.className = 'payment-status';
+};
+function saveJobState(extra = {}) {
+  if (!currentJobId) return;
+  const state = {
+    jobId: currentJobId,
+    filename: currentFile ? currentFile.name : (extra.filename || ''),
+    stemUrls,
+    stems: lastJobData?.stems || Object.keys(stemUrls),
+    paidDownloadUrls,
+    quality: selectedQuality,
+    outputFormat: selectedFormat,
+    savedAt: Date.now(),
+    ...extra
+  };
+  localStorage.setItem(JOB_STATE_KEY, JSON.stringify(state));
+}
+function loadJobState() {
+  try { return JSON.parse(localStorage.getItem(JOB_STATE_KEY) || 'null'); }
+  catch { return null; }
+}
+function restoreJobState(jobId) {
+  const state = loadJobState();
+  if (!state || (jobId && state.jobId !== jobId)) return null;
+  currentJobId = state.jobId;
+  stemUrls = state.stemUrls || {};
+  paidDownloadUrls = state.paidDownloadUrls || {};
+  lastJobData = { stems: state.stems || Object.keys(stemUrls), stem_urls: stemUrls };
+  selectedQuality = state.quality || state.selectedQuality || 'fast';
+  selectedFormat = state.outputFormat || state.selectedFormat || state.format || 'mp3';
+  setSelectedOptions(selectedQuality, selectedFormat);
+  if (state.filename) {
+    fileSelected = true;
+    document.getElementById('dropTitle').textContent = '🎵 ' + state.filename;
+    document.getElementById('splitBtn').textContent = 'Split "' + state.filename.slice(0,22) + (state.filename.length>22?'…':'') + '"';
+  }
+  return state;
+}
+function getSelectedQuality() {
+  return document.querySelector('input[name="quality"]:checked')?.value || selectedQuality || 'fast';
+}
+function getSelectedFormat() {
+  return document.querySelector('input[name="outputFormat"]:checked')?.value || selectedFormat || 'mp3';
+}
+function setSelectedOptions(quality = 'fast', format = 'mp3') {
+  selectedQuality = quality === 'high' ? 'high' : 'fast';
+  selectedFormat = format === 'wav' ? 'wav' : 'mp3';
+  const q = document.querySelector(`input[name="quality"][value="${selectedQuality}"]`);
+  const f = document.querySelector(`input[name="outputFormat"][value="${selectedFormat}"]`);
+  if (q) q.checked = true;
+  if (f) f.checked = true;
+}
+function handleOptionChange() {
+  selectedQuality = getSelectedQuality();
+  selectedFormat = getSelectedFormat();
+  if (currentJobId) saveJobState({ quality: selectedQuality, outputFormat: selectedFormat });
+}
+window.handleOptionChange = handleOptionChange;
+function qualityLabel(value = selectedQuality) { return value === 'high' ? 'High Quality' : 'Fast'; }
+function formatLabel(value = selectedFormat) { return (value === 'wav' ? 'WAV' : 'MP3'); }
+function renderPaidMeta() {
+  const el = document.getElementById('paidMeta');
+  if (!el) return;
+  const fmt = formatLabel();
+  el.innerHTML = `<div><strong>Quality:</strong> ${qualityLabel()}</div><div><strong>Format:</strong> ${fmt}</div><div class="format-warning${selectedFormat === 'wav' ? ' show' : ''}">WAV files are larger and may take longer to download.</div>`;
+  el.classList.add('show');
 }
 function updateSplitBtn() {
   const cb  = document.getElementById('legalCb');
@@ -570,10 +751,17 @@ function updateSplitBtn() {
 function toggleFaq(el) { el.closest('.faq-item').classList.toggle('open'); }
 function resetToUpload() {
   document.getElementById('results').classList.remove('show');
-  currentJobId = null; stemUrls = {}; fileSelected = false; currentFile = null;
+  localStorage.removeItem(JOB_STATE_KEY);
+  currentJobId = null; stemUrls = {}; paidDownloadUrls = {}; lastJobData = null; fileSelected = false; currentFile = null;
+  setSelectedOptions('fast', 'mp3');
   document.getElementById('dropTitle').textContent = 'Drop your track here';
   document.getElementById('splitBtn').textContent  = 'Split Track — Free Preview';
   document.getElementById('legalCb').checked = false;
+  document.getElementById('paidDownloads').classList.remove('show');
+  document.getElementById('btnCheckout').style.display = '';
+  document.getElementById('checkoutNote').style.display = '';
+  document.getElementById('resultFilename').style.display = 'none';
+  clearPaymentStatus();
   splitMode = false;
   updateSplitBtn();
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -618,6 +806,8 @@ dropzone.addEventListener('drop', e => {
 fileInput.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
 function handleFile(file) {
   currentFile = file; fileSelected = true;
+  localStorage.removeItem(JOB_STATE_KEY);
+  paidDownloadUrls = {}; lastJobData = null;
   document.getElementById('dropTitle').textContent = '🎵 ' + file.name;
   document.getElementById('splitBtn').textContent  = 'Split "' + file.name.slice(0,22) + (file.name.length>22?'…':'') + '"';
   updateSplitBtn();
@@ -654,9 +844,14 @@ async function startProcessing() {
     // Get fresh Firebase ID token
     const idToken = await window._getIdToken();
 
+    selectedQuality = getSelectedQuality();
+    selectedFormat = getSelectedFormat();
+
     const fd = new FormData();
     fd.append('file', currentFile);
     fd.append('stems', '2'); // always 2 — vocals + instrumental
+    fd.append('quality', selectedQuality);
+    fd.append('output_format', selectedFormat);
 
     const resp = await fetch(API_BASE + '/api/split', {
       method: 'POST',
@@ -668,6 +863,7 @@ async function startProcessing() {
 
     const startData = await resp.json();
     currentJobId = startData.job_id;
+    saveJobState({ filename: currentFile?.name || '', quality: selectedQuality, outputFormat: selectedFormat });
 
     // Poll with timeout + live status_detail from backend
     const TIMEOUT = 10 * 60 * 1000;
@@ -702,6 +898,8 @@ async function startProcessing() {
     clearInterval(fakeProgressInterval);
     fill.style.width = '100%'; label.textContent = 'Done!'; detail.textContent = '';
     stemUrls = job.stem_urls || {};
+    lastJobData = job;
+    saveJobState({ stems: job.stems || Object.keys(stemUrls), filename: currentFile?.name || '', quality: selectedQuality, outputFormat: selectedFormat });
     setTimeout(() => showResults(job), 500);
 
   } catch(err) {
@@ -731,10 +929,16 @@ const STEM_DISPLAY = {
 };
 
 function showResults(data) {
+  lastJobData = data || lastJobData || { stems: Object.keys(stemUrls), stem_urls: stemUrls };
   document.getElementById('processing').classList.remove('show');
   document.getElementById('results').classList.add('show');
+  const state = loadJobState();
+  const filename = currentFile?.name || state?.filename || '';
+  const filenameEl = document.getElementById('resultFilename');
+  if (filename) { filenameEl.textContent = 'Current track: ' + filename; filenameEl.style.display = ''; }
+  else filenameEl.style.display = 'none';
 
-  const stemNames = data.stems || Object.keys(stemUrls);
+  const stemNames = lastJobData.stems || Object.keys(stemUrls);
   const grid = document.getElementById('stemsGrid');
   grid.innerHTML = ''; audioObjects = {};
 
@@ -758,6 +962,8 @@ function showResults(data) {
     buildMiniWave(i, def.color);
   });
 
+  renderPaidDownloads(paidDownloadUrls);
+  saveJobState({ stems: stemNames, filename, quality: selectedQuality, outputFormat: selectedFormat });
   document.getElementById('results').scrollIntoView({ behavior:'smooth', block:'start' });
   document.getElementById('splitBtn').disabled = false;
 }
@@ -769,19 +975,21 @@ async function startCheckout() {
   btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Preparing checkout…';
   try {
     const token = await window._getIdToken();
-    const resp = await fetch(API_BASE + '/api/payments/checkout', {
+    saveJobState({ filename: currentFile?.name || loadJobState()?.filename || '', quality: selectedQuality, outputFormat: selectedFormat });
+    const resp = await fetch(API_BASE + '/api/create-checkout-session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify({ job_id: currentJobId, item_type: 'song' })
+      body: JSON.stringify({ job_id: currentJobId, item_type: 'song', return_path: '/' })
     });
     if (!resp.ok) {
       const e = await resp.json().catch(() => ({ detail: 'Checkout failed' }));
       throw new Error(e.detail || 'HTTP ' + resp.status);
     }
     const data = await resp.json();
-    if (data.checkout_url) {
+    const checkoutUrl = data.checkout_url || data.url;
+    if (checkoutUrl) {
       // Redirect to Stripe Checkout
-      window.location.href = data.checkout_url;
+      window.location.href = checkoutUrl;
     } else {
       throw new Error('No checkout URL returned from server.');
     }
@@ -790,6 +998,169 @@ async function startCheckout() {
     showToast('Checkout error: ' + err.message);
   }
 }
+
+
+function absoluteDownloadUrl(url) {
+  if (!url) return '';
+  if (/^https?:\/\//i.test(url)) return url;
+  return API_BASE + (String(url).startsWith('/') ? url : '/' + url);
+}
+function getDownloadUrl(value) {
+  if (!value) return null;
+  if (typeof value === 'string') return value;
+  if (typeof value === 'object') return value.url || value.href || value.download_url || value.path || null;
+  return null;
+}
+function downloadFilename(key, value) {
+  if (value && typeof value === 'object' && typeof value.filename === 'string') return value.filename;
+  const state = loadJobState();
+  const base = (state?.filename || currentFile?.name || 'vocalsplitter')
+    .replace(/\.[^/.]+$/, '')
+    .replace(/[^a-z0-9_-]+/gi, '-')
+    .replace(/^-+|-+$/g, '') || 'vocalsplitter';
+  if (key === 'zip') return base + '-full-split.zip';
+  const cleanKey = String(key || 'stem').replace(/[^a-z0-9_-]+/gi, '-');
+  return base + '-' + cleanKey + '.' + selectedFormat;
+}
+async function downloadProtectedFile(url, filename, btn) {
+  const originalText = btn?.textContent;
+  try {
+    if (btn) { btn.disabled = true; btn.textContent = 'Preparing download…'; }
+    setPaymentStatus('Preparing download…');
+    const token = await window._getIdToken();
+    const resp = await fetch(absoluteDownloadUrl(url), {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (!resp.ok) {
+      const text = await resp.text().catch(() => '');
+      throw new Error('Download failed: ' + resp.status + (text ? ' ' + text : ''));
+    }
+    const blob = await resp.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = objectUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+    setPaymentStatus('Download started. If your browser asks, choose where to save the file.', 'success');
+    showToast('Download started.');
+  } catch (err) {
+    setPaymentStatus('Download failed, please try again. ' + err.message, 'error');
+    showToast('Download failed, please try again.');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = originalText; }
+  }
+}
+function normaliseDownloadEntries(urls = {}) {
+  const entries = [];
+  if (urls.zip) entries.push({ key: 'zip', label: 'full ZIP', value: urls.zip, url: getDownloadUrl(urls.zip) });
+
+  const stems = urls.stems;
+  if (Array.isArray(stems)) {
+    stems.forEach((stem, i) => {
+      const name = stem?.name || stem?.stem || stem?.key || ('stem ' + (i + 1));
+      entries.push({ key: String(name), label: String(name).replace(/_/g, ' '), value: stem, url: getDownloadUrl(stem) });
+    });
+  } else if (stems && typeof stems === 'object') {
+    Object.entries(stems).forEach(([name, value]) => {
+      entries.push({ key: name, label: name.replace(/_/g, ' '), value, url: getDownloadUrl(value) });
+    });
+  }
+
+  Object.entries(urls).forEach(([key, value]) => {
+    if (key === 'zip' || key === 'stems') return;
+    entries.push({ key, label: key.replace(/_/g, ' '), value, url: getDownloadUrl(value) });
+  });
+
+  return entries.filter((entry, index, all) => entry.url && all.findIndex(other => other.url === entry.url) === index);
+}
+function renderPaidDownloads(urls = {}) {
+  const wrap = document.getElementById('paidDownloads');
+  const grid = document.getElementById('paidDownloadGrid');
+  const meta = document.getElementById('paidMeta');
+  if (!urls || !Object.keys(urls).length) { wrap.classList.remove('show'); meta?.classList.remove('show'); return; }
+  paidDownloadUrls = urls;
+  grid.innerHTML = '';
+  const entries = normaliseDownloadEntries(urls);
+  if (!entries.length) { wrap.classList.remove('show'); meta?.classList.remove('show'); return; }
+  renderPaidMeta();
+  entries.forEach(({ key, label, value, url }) => {
+    if (!url) return;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'paid-download-btn' + (key === 'zip' ? ' primary' : '');
+    btn.textContent = key === 'zip' ? '⬇ Download full ZIP' : '⬇ Download ' + label;
+    btn.addEventListener('click', () => downloadProtectedFile(url, downloadFilename(key, value), btn));
+    grid.appendChild(btn);
+  });
+  document.getElementById('btnCheckout').style.display = 'none';
+  document.getElementById('checkoutNote').style.display = 'none';
+  wrap.classList.add('show');
+  saveJobState();
+}
+window.verifyStripeReturn = async function verifyStripeReturn() {
+  const p = new URLSearchParams(window.location.search);
+  const payment = p.get('payment');
+  if (payment === 'cancel') {
+    restoreJobState();
+    if (lastJobData) showResults(lastJobData);
+    showToast('Payment cancelled — your free preview is still available.');
+    window.history.replaceState({}, '', window.location.pathname);
+    return;
+  }
+  if (payment !== 'success') return;
+
+  const sessionId = p.get('session_id');
+  const jobId = p.get('job_id');
+  restoreJobState(jobId);
+  if (lastJobData) showResults(lastJobData);
+  else document.getElementById('results').classList.add('show');
+
+  if (!sessionId || !jobId) {
+    setPaymentStatus('Payment returned, but the session or job id was missing. Please contact support with your receipt.', 'error');
+    showToast('Verification failed: missing job/session id.');
+    window.history.replaceState({}, '', window.location.pathname);
+    return;
+  }
+
+  setPaymentStatus('Verifying your payment and restoring your downloads…');
+  if (!window._fbAuth?.currentUser) {
+    setPaymentStatus('Payment received, but you are not signed in. Please sign in with the same Google account to unlock downloads.', 'error');
+    showToast('Please sign in to verify your payment.');
+    return;
+  }
+
+  try {
+    const token = await window._getIdToken();
+    const qs = new URLSearchParams({ session_id: sessionId, job_id: jobId });
+    const resp = await fetch(API_BASE + '/api/payment/verify?' + qs.toString(), {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (resp.status === 401) throw new Error('User not signed in or session expired. Please sign in again.');
+    if (!resp.ok) {
+      const e = await resp.json().catch(() => ({ detail: 'Verification failed' }));
+      throw new Error(e.detail || e.error || 'HTTP ' + resp.status);
+    }
+    const data = await resp.json();
+    const urls = data.download_urls || {};
+    if (!Object.keys(urls).length) throw new Error('Payment verified, but no download links were returned.');
+    selectedQuality = data.quality || data.processing_quality || selectedQuality;
+    selectedFormat = data.output_format || data.format || selectedFormat;
+    setSelectedOptions(selectedQuality, selectedFormat);
+    paidDownloadUrls = urls;
+    currentJobId = jobId;
+    renderPaidMeta();
+    renderPaidDownloads(urls);
+    setPaymentStatus('Payment successful — your full download links are ready below.', 'success');
+    showToast('✅ Payment verified! Downloads ready.');
+    window.history.replaceState({}, '', window.location.pathname);
+  } catch (err) {
+    setPaymentStatus('Verification failed: ' + err.message, 'error');
+    showToast('Verification failed: ' + err.message);
+  }
+};
 
 // ── AUDIO PLAYBACK ──
 function togglePlay(i, url) {
@@ -848,17 +1219,21 @@ document.querySelectorAll('a[href^="#"]').forEach(a => {
 });
 
 // ── CHECK FOR STRIPE REDIRECT BACK ──
-// After Stripe Checkout, Stripe redirects to success/cancel URL.
-// Codex set FRONTEND_URL for this. Show a success toast if ?payment=success
+// Stripe returns with payment/session/job query params. Verification waits for Firebase auth.
 (function() {
   const p = new URLSearchParams(window.location.search);
-  if (p.get('payment') === 'success') {
-    showToast('✅ Payment confirmed! Your download is ready.');
-    window.history.replaceState({}, '', window.location.pathname);
-  }
-  if (p.get('payment') === 'cancel') {
-    showToast('Payment cancelled — your free preview is still available.');
-    window.history.replaceState({}, '', window.location.pathname);
+  const payment = p.get('payment');
+  if (payment === 'success') {
+    const jobId = p.get('job_id');
+    restoreJobState(jobId);
+    if (lastJobData) showResults(lastJobData);
+    else document.getElementById('results').classList.add('show');
+    setPaymentStatus('Verifying your payment…');
+  } else if (payment === 'cancel') {
+    verifyStripeReturn();
+  } else {
+    const state = restoreJobState();
+    if (state?.paidDownloadUrls && Object.keys(state.paidDownloadUrls).length) showResults(lastJobData);
   }
 })();
 </script>
