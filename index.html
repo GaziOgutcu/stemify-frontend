@@ -147,6 +147,18 @@
   .btn-checkout:hover { transform:translateY(-1px); box-shadow:0 0 44px rgba(109,40,217,0.7); }
   .btn-checkout:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
   .checkout-note { font-size:11px; color:var(--muted); display:flex; align-items:center; justify-content:center; gap:5px; }
+  .payment-status { display:none; margin:0 0 18px; padding:12px 14px; border-radius:12px; border:1px solid var(--border); background:rgba(109,40,217,0.08); color:var(--muted); font-size:13px; line-height:1.5; }
+  .payment-status.show { display:block; }
+  .payment-status.success { border-color:rgba(16,185,129,0.35); background:rgba(16,185,129,0.1); color:#A7F3D0; }
+  .payment-status.error { border-color:rgba(239,68,68,0.35); background:rgba(239,68,68,0.08); color:#FCA5A5; }
+  .paid-downloads { display:none; margin-top:18px; }
+  .paid-downloads.show { display:block; }
+  .paid-download-grid { display:grid; grid-template-columns:1fr; gap:10px; margin-top:12px; }
+  .paid-download-btn { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; padding:13px 16px; border-radius:12px; border:1px solid rgba(34,211,238,0.35); background:rgba(34,211,238,0.1); color:var(--white); text-decoration:none; font-family:'Space Grotesk',sans-serif; font-size:15px; font-weight:600; transition:all 0.2s; }
+  .paid-download-btn:hover { border-color:var(--cyan); background:rgba(34,211,238,0.18); transform:translateY(-1px); }
+  .paid-download-btn.primary { background:linear-gradient(135deg,var(--green),#0f766e); border-color:rgba(16,185,129,0.55); box-shadow:0 0 28px rgba(16,185,129,0.28); }
+  .paid-download-btn.primary:hover { box-shadow:0 0 40px rgba(16,185,129,0.38); }
+  .filename-note { color:var(--muted); font-size:12px; margin-bottom:16px; }
 
   /* Split again */
   .btn-split-again { margin-top:16px; background:transparent; border:1px solid var(--border); color:var(--muted); padding:10px 24px; border-radius:10px; font-family:inherit; font-size:14px; cursor:pointer; transition:all 0.2s; }
@@ -330,14 +342,21 @@
   <div class="stems-grid" id="stemsGrid"></div>
 
   <div class="download-cta" id="downloadCta">
-    <h3>Download the full split</h3>
-    <p>Get the complete vocal and instrumental tracks in full quality WAV. One-time payment, yours forever.</p>
+    <div class="payment-status" id="paymentStatus" role="status" aria-live="polite"></div>
+    <h3 id="downloadTitle">Download the full split</h3>
+    <p id="downloadDescription">Get the complete vocal and instrumental tracks in full quality WAV. One-time payment, yours forever.</p>
+    <div class="filename-note" id="resultFilename" style="display:none;"></div>
     <div class="price-tag">$3</div>
     <div class="price-note">One-time · No subscription · Full quality WAV</div>
     <button class="btn-checkout" id="btnCheckout" onclick="startCheckout()">
       Pay $3 &amp; Download Full Song
     </button>
-    <div class="checkout-note">🔒 Secure checkout via Stripe</div>
+    <div class="checkout-note" id="checkoutNote">🔒 Secure checkout via Stripe</div>
+    <div class="paid-downloads" id="paidDownloads">
+      <h3>Your paid downloads are ready ✅</h3>
+      <p>Download your full split below. Use the ZIP for the easiest one-click download.</p>
+      <div class="paid-download-grid" id="paidDownloadGrid"></div>
+    </div>
   </div>
 
   <button class="btn-split-again" onclick="resetToUpload()">↩ Split another song</button>
@@ -523,6 +542,7 @@ onAuthStateChanged(auth, user => {
     document.getElementById('legalCheck').classList.add('show');
     document.getElementById('dropzone').classList.remove('locked');
     updateSplitBtn();
+    if (window._pendingPaymentReturn && window.verifyStripeReturn) window.verifyStripeReturn();
   } else {
     // Logged out state
     const btn = document.getElementById('navSignInBtn');
@@ -533,6 +553,15 @@ onAuthStateChanged(auth, user => {
     document.getElementById('authGate').classList.add('show');
     document.getElementById('legalCheck').classList.remove('show');
     document.getElementById('legalCb').checked = false;
+    if (window._pendingPaymentReturn && window.setPaymentStatus) {
+      window.setPaymentStatus('Payment received, but you are not signed in. Please sign in with the same Google account to unlock downloads.', 'error');
+    } else {
+      document.getElementById('paidDownloads').classList.remove('show');
+      document.getElementById('btnCheckout').style.display = '';
+      document.getElementById('checkoutNote').style.display = '';
+      document.getElementById('resultFilename').style.display = 'none';
+      if (window.clearPaymentStatus) window.clearPaymentStatus();
+    }
     document.getElementById('dropzone').classList.add('locked');
     updateSplitBtn();
   }
@@ -554,12 +583,57 @@ let audioObjects = {};
 let splitMode    = false;
 let pollInterval = null;
 let fakeProgressInterval = null;
+let lastJobData = null;
+let paidDownloadUrls = {};
+const JOB_STATE_KEY = 'vocalsplitter:lastJob';
+window._pendingPaymentReturn = new URLSearchParams(window.location.search).get('payment') === 'success';
 
 // ── Helpers ──
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 3400);
+}
+window.setPaymentStatus = function setPaymentStatus(msg, type = '') {
+  const el = document.getElementById('paymentStatus');
+  el.textContent = msg;
+  el.className = 'payment-status show' + (type ? ' ' + type : '');
+};
+window.clearPaymentStatus = function clearPaymentStatus() {
+  const el = document.getElementById('paymentStatus');
+  el.textContent = '';
+  el.className = 'payment-status';
+};
+function saveJobState(extra = {}) {
+  if (!currentJobId) return;
+  const state = {
+    jobId: currentJobId,
+    filename: currentFile ? currentFile.name : (extra.filename || ''),
+    stemUrls,
+    stems: lastJobData?.stems || Object.keys(stemUrls),
+    paidDownloadUrls,
+    savedAt: Date.now(),
+    ...extra
+  };
+  localStorage.setItem(JOB_STATE_KEY, JSON.stringify(state));
+}
+function loadJobState() {
+  try { return JSON.parse(localStorage.getItem(JOB_STATE_KEY) || 'null'); }
+  catch { return null; }
+}
+function restoreJobState(jobId) {
+  const state = loadJobState();
+  if (!state || (jobId && state.jobId !== jobId)) return null;
+  currentJobId = state.jobId;
+  stemUrls = state.stemUrls || {};
+  paidDownloadUrls = state.paidDownloadUrls || {};
+  lastJobData = { stems: state.stems || Object.keys(stemUrls), stem_urls: stemUrls };
+  if (state.filename) {
+    fileSelected = true;
+    document.getElementById('dropTitle').textContent = '🎵 ' + state.filename;
+    document.getElementById('splitBtn').textContent = 'Split "' + state.filename.slice(0,22) + (state.filename.length>22?'…':'') + '"';
+  }
+  return state;
 }
 function updateSplitBtn() {
   const cb  = document.getElementById('legalCb');
@@ -570,10 +644,16 @@ function updateSplitBtn() {
 function toggleFaq(el) { el.closest('.faq-item').classList.toggle('open'); }
 function resetToUpload() {
   document.getElementById('results').classList.remove('show');
-  currentJobId = null; stemUrls = {}; fileSelected = false; currentFile = null;
+  localStorage.removeItem(JOB_STATE_KEY);
+  currentJobId = null; stemUrls = {}; paidDownloadUrls = {}; lastJobData = null; fileSelected = false; currentFile = null;
   document.getElementById('dropTitle').textContent = 'Drop your track here';
   document.getElementById('splitBtn').textContent  = 'Split Track — Free Preview';
   document.getElementById('legalCb').checked = false;
+  document.getElementById('paidDownloads').classList.remove('show');
+  document.getElementById('btnCheckout').style.display = '';
+  document.getElementById('checkoutNote').style.display = '';
+  document.getElementById('resultFilename').style.display = 'none';
+  clearPaymentStatus();
   splitMode = false;
   updateSplitBtn();
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -618,6 +698,8 @@ dropzone.addEventListener('drop', e => {
 fileInput.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
 function handleFile(file) {
   currentFile = file; fileSelected = true;
+  localStorage.removeItem(JOB_STATE_KEY);
+  paidDownloadUrls = {}; lastJobData = null;
   document.getElementById('dropTitle').textContent = '🎵 ' + file.name;
   document.getElementById('splitBtn').textContent  = 'Split "' + file.name.slice(0,22) + (file.name.length>22?'…':'') + '"';
   updateSplitBtn();
@@ -668,6 +750,7 @@ async function startProcessing() {
 
     const startData = await resp.json();
     currentJobId = startData.job_id;
+    saveJobState({ filename: currentFile?.name || '' });
 
     // Poll with timeout + live status_detail from backend
     const TIMEOUT = 10 * 60 * 1000;
@@ -702,6 +785,8 @@ async function startProcessing() {
     clearInterval(fakeProgressInterval);
     fill.style.width = '100%'; label.textContent = 'Done!'; detail.textContent = '';
     stemUrls = job.stem_urls || {};
+    lastJobData = job;
+    saveJobState({ stems: job.stems || Object.keys(stemUrls), filename: currentFile?.name || '' });
     setTimeout(() => showResults(job), 500);
 
   } catch(err) {
@@ -731,10 +816,16 @@ const STEM_DISPLAY = {
 };
 
 function showResults(data) {
+  lastJobData = data || lastJobData || { stems: Object.keys(stemUrls), stem_urls: stemUrls };
   document.getElementById('processing').classList.remove('show');
   document.getElementById('results').classList.add('show');
+  const state = loadJobState();
+  const filename = currentFile?.name || state?.filename || '';
+  const filenameEl = document.getElementById('resultFilename');
+  if (filename) { filenameEl.textContent = 'Current track: ' + filename; filenameEl.style.display = ''; }
+  else filenameEl.style.display = 'none';
 
-  const stemNames = data.stems || Object.keys(stemUrls);
+  const stemNames = lastJobData.stems || Object.keys(stemUrls);
   const grid = document.getElementById('stemsGrid');
   grid.innerHTML = ''; audioObjects = {};
 
@@ -758,6 +849,8 @@ function showResults(data) {
     buildMiniWave(i, def.color);
   });
 
+  renderPaidDownloads(paidDownloadUrls);
+  saveJobState({ stems: stemNames, filename });
   document.getElementById('results').scrollIntoView({ behavior:'smooth', block:'start' });
   document.getElementById('splitBtn').disabled = false;
 }
@@ -769,19 +862,21 @@ async function startCheckout() {
   btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Preparing checkout…';
   try {
     const token = await window._getIdToken();
-    const resp = await fetch(API_BASE + '/api/payments/checkout', {
+    saveJobState({ filename: currentFile?.name || loadJobState()?.filename || '' });
+    const resp = await fetch(API_BASE + '/api/create-checkout-session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify({ job_id: currentJobId, item_type: 'song' })
+      body: JSON.stringify({ job_id: currentJobId, item_type: 'song', return_path: '/download' })
     });
     if (!resp.ok) {
       const e = await resp.json().catch(() => ({ detail: 'Checkout failed' }));
       throw new Error(e.detail || 'HTTP ' + resp.status);
     }
     const data = await resp.json();
-    if (data.checkout_url) {
+    const checkoutUrl = data.checkout_url || data.url;
+    if (checkoutUrl) {
       // Redirect to Stripe Checkout
-      window.location.href = data.checkout_url;
+      window.location.href = checkoutUrl;
     } else {
       throw new Error('No checkout URL returned from server.');
     }
@@ -790,6 +885,92 @@ async function startCheckout() {
     showToast('Checkout error: ' + err.message);
   }
 }
+
+
+function absoluteDownloadUrl(url) {
+  if (!url) return '';
+  if (/^https?:\/\//i.test(url)) return url;
+  return API_BASE + url;
+}
+function renderPaidDownloads(urls = {}) {
+  const wrap = document.getElementById('paidDownloads');
+  const grid = document.getElementById('paidDownloadGrid');
+  if (!urls || !Object.keys(urls).length) { wrap.classList.remove('show'); return; }
+  paidDownloadUrls = urls;
+  grid.innerHTML = '';
+  const ordered = Object.entries(urls).sort(([a], [b]) => (a === 'zip' ? -1 : b === 'zip' ? 1 : a.localeCompare(b)));
+  ordered.forEach(([key, url]) => {
+    if (!url) return;
+    const a = document.createElement('a');
+    a.className = 'paid-download-btn' + (key === 'zip' ? ' primary' : '');
+    a.href = absoluteDownloadUrl(url);
+    a.target = '_blank';
+    a.rel = 'noopener';
+    a.textContent = key === 'zip' ? '⬇ Download full ZIP' : '⬇ Download ' + key.replace(/_/g, ' ');
+    grid.appendChild(a);
+  });
+  document.getElementById('btnCheckout').style.display = 'none';
+  document.getElementById('checkoutNote').style.display = 'none';
+  wrap.classList.add('show');
+  saveJobState();
+}
+window.verifyStripeReturn = async function verifyStripeReturn() {
+  const p = new URLSearchParams(window.location.search);
+  const payment = p.get('payment');
+  if (payment === 'cancel') {
+    restoreJobState();
+    if (lastJobData) showResults(lastJobData);
+    showToast('Payment cancelled — your free preview is still available.');
+    window.history.replaceState({}, '', window.location.pathname);
+    return;
+  }
+  if (payment !== 'success') return;
+
+  const sessionId = p.get('session_id');
+  const jobId = p.get('job_id');
+  restoreJobState(jobId);
+  if (lastJobData) showResults(lastJobData);
+  else document.getElementById('results').classList.add('show');
+
+  if (!sessionId || !jobId) {
+    setPaymentStatus('Payment returned, but the session or job id was missing. Please contact support with your receipt.', 'error');
+    showToast('Verification failed: missing job/session id.');
+    window.history.replaceState({}, '', window.location.pathname);
+    return;
+  }
+
+  setPaymentStatus('Verifying your payment and restoring your downloads…');
+  if (!window._fbAuth?.currentUser) {
+    setPaymentStatus('Payment received, but you are not signed in. Please sign in with the same Google account to unlock downloads.', 'error');
+    showToast('Please sign in to verify your payment.');
+    return;
+  }
+
+  try {
+    const token = await window._getIdToken();
+    const qs = new URLSearchParams({ session_id: sessionId, job_id: jobId });
+    const resp = await fetch(API_BASE + '/api/payment/verify?' + qs.toString(), {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (resp.status === 401) throw new Error('User not signed in or session expired. Please sign in again.');
+    if (!resp.ok) {
+      const e = await resp.json().catch(() => ({ detail: 'Verification failed' }));
+      throw new Error(e.detail || e.error || 'HTTP ' + resp.status);
+    }
+    const data = await resp.json();
+    const urls = data.download_urls || {};
+    if (!Object.keys(urls).length) throw new Error('Payment verified, but no download links were returned.');
+    paidDownloadUrls = urls;
+    currentJobId = jobId;
+    renderPaidDownloads(urls);
+    setPaymentStatus('Payment successful — your full download links are ready below.', 'success');
+    showToast('✅ Payment verified! Downloads ready.');
+    window.history.replaceState({}, '', window.location.pathname);
+  } catch (err) {
+    setPaymentStatus('Verification failed: ' + err.message, 'error');
+    showToast('Verification failed: ' + err.message);
+  }
+};
 
 // ── AUDIO PLAYBACK ──
 function togglePlay(i, url) {
@@ -848,17 +1029,21 @@ document.querySelectorAll('a[href^="#"]').forEach(a => {
 });
 
 // ── CHECK FOR STRIPE REDIRECT BACK ──
-// After Stripe Checkout, Stripe redirects to success/cancel URL.
-// Codex set FRONTEND_URL for this. Show a success toast if ?payment=success
+// Stripe returns with payment/session/job query params. Verification waits for Firebase auth.
 (function() {
   const p = new URLSearchParams(window.location.search);
-  if (p.get('payment') === 'success') {
-    showToast('✅ Payment confirmed! Your download is ready.');
-    window.history.replaceState({}, '', window.location.pathname);
-  }
-  if (p.get('payment') === 'cancel') {
-    showToast('Payment cancelled — your free preview is still available.');
-    window.history.replaceState({}, '', window.location.pathname);
+  const payment = p.get('payment');
+  if (payment === 'success') {
+    const jobId = p.get('job_id');
+    restoreJobState(jobId);
+    if (lastJobData) showResults(lastJobData);
+    else document.getElementById('results').classList.add('show');
+    setPaymentStatus('Verifying your payment…');
+  } else if (payment === 'cancel') {
+    verifyStripeReturn();
+  } else {
+    const state = restoreJobState();
+    if (state?.paidDownloadUrls && Object.keys(state.paidDownloadUrls).length) showResults(lastJobData);
   }
 })();
 </script>
