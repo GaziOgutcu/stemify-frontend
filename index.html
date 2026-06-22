@@ -154,10 +154,11 @@
   .paid-downloads { display:none; margin-top:18px; }
   .paid-downloads.show { display:block; }
   .paid-download-grid { display:grid; grid-template-columns:1fr; gap:10px; margin-top:12px; }
-  .paid-download-btn { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; padding:13px 16px; border-radius:12px; border:1px solid rgba(34,211,238,0.35); background:rgba(34,211,238,0.1); color:var(--white); text-decoration:none; font-family:'Space Grotesk',sans-serif; font-size:15px; font-weight:600; transition:all 0.2s; }
+  .paid-download-btn { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; padding:13px 16px; border-radius:12px; border:1px solid rgba(34,211,238,0.35); background:rgba(34,211,238,0.1); color:var(--white); text-decoration:none; font-family:'Space Grotesk',sans-serif; font-size:15px; font-weight:600; transition:all 0.2s; cursor:pointer; }
   .paid-download-btn:hover { border-color:var(--cyan); background:rgba(34,211,238,0.18); transform:translateY(-1px); }
   .paid-download-btn.primary { background:linear-gradient(135deg,var(--green),#0f766e); border-color:rgba(16,185,129,0.55); box-shadow:0 0 28px rgba(16,185,129,0.28); }
   .paid-download-btn.primary:hover { box-shadow:0 0 40px rgba(16,185,129,0.38); }
+  .paid-download-btn:disabled { opacity:0.6; cursor:not-allowed; transform:none; box-shadow:none; }
   .filename-note { color:var(--muted); font-size:12px; margin-bottom:16px; }
 
   /* Split again */
@@ -892,6 +893,47 @@ function absoluteDownloadUrl(url) {
   if (/^https?:\/\//i.test(url)) return url;
   return API_BASE + url;
 }
+function downloadFilename(key) {
+  const state = loadJobState();
+  const base = (state?.filename || currentFile?.name || 'vocalsplitter')
+    .replace(/\.[^/.]+$/, '')
+    .replace(/[^a-z0-9_-]+/gi, '-')
+    .replace(/^-+|-+$/g, '') || 'vocalsplitter';
+  if (key === 'zip') return base + '-full-split.zip';
+  const cleanKey = key.replace(/[^a-z0-9_-]+/gi, '-');
+  return base + '-' + cleanKey + '.wav';
+}
+async function downloadProtectedFile(url, filename, btn) {
+  const originalText = btn?.textContent;
+  try {
+    if (btn) { btn.disabled = true; btn.textContent = 'Preparing download…'; }
+    setPaymentStatus('Preparing download…');
+    const token = await window._getIdToken();
+    const resp = await fetch(absoluteDownloadUrl(url), {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (!resp.ok) {
+      const text = await resp.text().catch(() => '');
+      throw new Error('Download failed: ' + resp.status + (text ? ' ' + text : ''));
+    }
+    const blob = await resp.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = objectUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+    setPaymentStatus('Download started. If your browser asks, choose where to save the file.', 'success');
+    showToast('Download started.');
+  } catch (err) {
+    setPaymentStatus('Download failed, please try again. ' + err.message, 'error');
+    showToast('Download failed, please try again.');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = originalText; }
+  }
+}
 function renderPaidDownloads(urls = {}) {
   const wrap = document.getElementById('paidDownloads');
   const grid = document.getElementById('paidDownloadGrid');
@@ -901,13 +943,12 @@ function renderPaidDownloads(urls = {}) {
   const ordered = Object.entries(urls).sort(([a], [b]) => (a === 'zip' ? -1 : b === 'zip' ? 1 : a.localeCompare(b)));
   ordered.forEach(([key, url]) => {
     if (!url) return;
-    const a = document.createElement('a');
-    a.className = 'paid-download-btn' + (key === 'zip' ? ' primary' : '');
-    a.href = absoluteDownloadUrl(url);
-    a.target = '_blank';
-    a.rel = 'noopener';
-    a.textContent = key === 'zip' ? '⬇ Download full ZIP' : '⬇ Download ' + key.replace(/_/g, ' ');
-    grid.appendChild(a);
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'paid-download-btn' + (key === 'zip' ? ' primary' : '');
+    btn.textContent = key === 'zip' ? '⬇ Download full ZIP' : '⬇ Download ' + key.replace(/_/g, ' ');
+    btn.addEventListener('click', () => downloadProtectedFile(url, downloadFilename(key), btn));
+    grid.appendChild(btn);
   });
   document.getElementById('btnCheckout').style.display = 'none';
   document.getElementById('checkoutNote').style.display = 'none';
