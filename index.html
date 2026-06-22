@@ -619,6 +619,7 @@ onAuthStateChanged(auth, user => {
 const API_BASE = 'https://stemify-backend-production.up.railway.app';
 const JOB_STATE_KEY = 'vocalSplitterJob';
 const POLL_MS = 4000;
+const PREVIEW_TIMEOUT_MS = 2 * 60 * 1000;
 // ══════════════════════════════════════════════════════════
 
 let fileSelected = false;
@@ -632,6 +633,7 @@ let fakeProgressInterval = null;
 let selectedFormat = 'mp3';
 let previewUrlsAreValid = false;
 let restoredNotice = '';
+let previewPollStartedAt = null;
 
 window._pendingPaymentReturn = false;
 
@@ -762,13 +764,47 @@ function collectDownloadEntries(job = {}) {
 function canPay(job = currentJob) {
   return !!(job?.preview_status === 'ready' && previewUrlsAreValid && collectPreviewUrls(job).length > 0);
 }
+function isPreviewPending(status) {
+  return status === 'processing' || status === 'pending' || status === 'queued' || !status;
+}
+function hidePaymentSection(reason = '') {
+  const btn = document.getElementById('btnCheckout');
+  const note = document.getElementById('checkoutNote');
+  const wrap = document.getElementById('paidDownloads');
+  const check = document.getElementById('btnCheckStatus');
+  if (btn) { btn.disabled = true; btn.style.display = 'none'; }
+  if (note) note.style.display = 'none';
+  if (wrap) wrap.classList.remove('show');
+  if (check) check.style.display = 'none';
+  console.log('Pay button hidden', reason || 'not eligible');
+}
+function showPreviewProcessing(message = 'Creating preview...') {
+  const processing = document.getElementById('processing');
+  const results = document.getElementById('results');
+  const label = document.getElementById('processingLabel');
+  const detail = document.getElementById('processingDetail');
+  const fill = document.getElementById('progressFill');
+  if (results) results.classList.remove('show');
+  if (processing) processing.classList.add('show');
+  if (label) label.textContent = message;
+  if (detail) detail.textContent = '';
+  if (fill && !fill.style.width) fill.style.width = '35%';
+  hidePaymentSection('preview is not ready');
+}
+function maybeShowPreviewTimeout() {
+  if (!previewPollStartedAt) return false;
+  if (Date.now() - previewPollStartedAt < PREVIEW_TIMEOUT_MS) return false;
+  showPreviewProcessing('Preview is taking longer than expected. Please wait or try again.');
+  setPaymentStatus('Preview is taking longer than expected. Please wait or try again.');
+  return true;
+}
 
 function resetToUpload(message = '') {
   stopPolling();
   document.getElementById('processing').classList.remove('show');
   document.getElementById('results').classList.remove('show');
   clearJobState();
-  currentJobId = null; currentJob = null; fileSelected = false; currentFile = null; previewUrlsAreValid = false;
+  currentJobId = null; currentJob = null; fileSelected = false; currentFile = null; previewUrlsAreValid = false; previewPollStartedAt = null;
   setSelectedOptions('mp3');
   document.getElementById('dropTitle').textContent = 'Drop your track here';
   document.getElementById('splitBtn').textContent = 'Create Preview';
@@ -864,13 +900,15 @@ async function startProcessing() {
     fd.append('stems', '2');
     fd.append('output_format', selectedFormat);
     const startData = await fetchJson(API_BASE + '/api/split', { method: 'POST', headers: await authHeaders(), body: fd });
-    label.textContent = 'Creating 15-second preview...';
+    console.log('/api/split response', startData);
+    label.textContent = 'Creating preview...';
     currentJobId = startData.job_id;
     currentJob = startData;
     if (!currentJobId) throw new Error('Backend did not return a job id.');
     saveJobState({ job: startData, original_filename: startData.original_filename || currentFile?.name || '' });
-    applyJobToUi(startData);
-    if (startData.preview_status === 'processing' || startData.preview_status === 'queued') startPolling();
+    previewPollStartedAt = Date.now();
+    showPreviewProcessing('Creating preview...');
+    startPolling();
     await refreshJob({ silent: true });
   } catch (err) {
     stopPolling();
@@ -879,7 +917,7 @@ async function startProcessing() {
   } finally {
     clearInterval(fakeProgressInterval); fakeProgressInterval = null;
     fill.style.width = '100%';
-    document.getElementById('processing').classList.remove('show');
+    if (!isPreviewPending(currentJob?.preview_status)) document.getElementById('processing').classList.remove('show');
     setBusy(false); splitMode = false;
   }
 }
@@ -899,8 +937,15 @@ function applyJobToUi(job) {
   currentJob = job || currentJob || {};
   currentJobId = currentJob.job_id || currentJobId;
   saveJobState({ job: currentJob });
+  console.log('preview_status', currentJob.preview_status);
+
+  if (isPreviewPending(currentJob.preview_status)) {
+    maybeShowPreviewTimeout() || showPreviewProcessing('Creating preview...');
+    return;
+  }
+
+  document.getElementById('processing').classList.remove('show');
   document.getElementById('results').classList.add('show');
-  document.getElementById('processing').classList.toggle('show', currentJob.preview_status === 'processing');
   const title = document.querySelector('.results-title');
   const sub = document.querySelector('.results-sub');
   const filename = currentJob.original_filename || loadJobState()?.original_filename || currentFile?.name || '';
@@ -920,13 +965,15 @@ function renderPreviewSection(job) {
     setPaymentStatus(job.preview_error || job.error || 'Preview failed. Please try uploading again.', 'error');
     return;
   }
-  if (job.preview_status === 'processing' || job.preview_status === 'queued') {
-    setPaymentStatus('Creating preview...');
+  if (isPreviewPending(job.preview_status)) {
+    showPreviewProcessing('Creating preview...');
     return;
   }
   const previews = collectPreviewUrls(job);
+  console.log('preview URLs found', previews);
   if (job.preview_status !== 'ready' || previews.length === 0) {
     setPaymentStatus('Preview is not ready yet. Please create a preview first.');
+    hidePaymentSection('preview ready without URLs');
     return;
   }
   previewUrlsAreValid = true;
@@ -960,9 +1007,14 @@ function renderPaymentAndDownloads(job) {
   const grid = document.getElementById('paidDownloadGrid');
   const downloads = collectDownloadEntries(job);
   if (grid) grid.innerHTML = '';
+  if (isPreviewPending(job.preview_status) || job.preview_status === 'failed' || collectPreviewUrls(job).length === 0) {
+    hidePaymentSection('preview status is ' + (job.preview_status || 'undefined'));
+    return;
+  }
   if (btn) { btn.style.display = ''; btn.textContent = 'Pay $3 AUD'; btn.disabled = !canPay(job); }
   if (note) note.style.display = '';
   if (wrap) wrap.classList.remove('show');
+  console.log('Pay button enabled?', !!(btn && !btn.disabled), 'hidden?', !!(btn && btn.style.display === 'none'));
 
   if (job.payment_status === 'paid' && job.full_processing_status === 'processing') {
     if (btn) btn.style.display = 'none';
@@ -1018,6 +1070,7 @@ async function refreshJob({ silent = false } = {}) {
   if (!currentJobId) return;
   try {
     const job = await fetchJson(API_BASE + '/api/job/' + encodeURIComponent(currentJobId), { headers: await authHeaders() });
+    console.log('/api/job response', job);
     applyJobToUi(job);
   } catch (err) {
     if (err.status === 404 || /not found|expired/i.test(err.message)) {
@@ -1082,6 +1135,7 @@ window.restoreSavedJobOnLoad = function restoreSavedJobOnLoad() {
   if (!state?.job_id || currentJob?.job_id === state.job_id) return;
   if (!window._fbAuth?.currentUser) return;
   restoreLightweightState(state);
+  previewPollStartedAt = Date.now();
   restoredNotice = 'Restoring your previous upload...';
   refreshJob({ silent: false });
 };
