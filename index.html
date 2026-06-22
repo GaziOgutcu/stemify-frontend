@@ -181,6 +181,23 @@
   .paid-download-btn:disabled { opacity:0.6; cursor:not-allowed; transform:none; box-shadow:none; }
   .filename-note { color:var(--muted); font-size:12px; margin-bottom:16px; }
 
+  .status-badge { display:inline-flex; align-items:center; gap:6px; margin:0 auto 18px; padding:7px 12px; border-radius:999px; border:1px solid rgba(34,211,238,0.28); background:rgba(34,211,238,0.08); color:#A5F3FC; font-size:12px; font-weight:600; }
+  .status-badge .pulse-dot { width:7px; height:7px; border-radius:50%; background:var(--cyan); box-shadow:0 0 12px var(--cyan); animation:pulse 1.4s ease-in-out infinite; }
+  .download-expiry { margin-top:12px; color:var(--muted); font-size:12px; }
+
+  .work-overlay { position:fixed; inset:0; z-index:50; display:none; align-items:center; justify-content:center; padding:24px; background:rgba(2,6,23,0.72); backdrop-filter:blur(5px); }
+  .work-overlay.show { display:flex; }
+  .work-card { width:min(520px,100%); border:1px solid rgba(255,255,255,0.12); border-radius:22px; background:linear-gradient(180deg,rgba(30,41,59,0.96),rgba(15,23,42,0.98)); box-shadow:0 24px 80px rgba(0,0,0,0.45), var(--glow); padding:30px; text-align:center; }
+  .work-spinner { width:52px; height:52px; margin:0 auto 18px; border-radius:50%; border:4px solid rgba(255,255,255,0.12); border-top-color:var(--cyan); border-right-color:var(--violet-light); animation:spin 0.9s linear infinite; }
+  .work-title { font-family:'Space Grotesk',sans-serif; font-size:22px; font-weight:700; margin-bottom:10px; }
+  .work-message { color:var(--white); font-size:15px; margin-bottom:8px; }
+  .work-sub { color:var(--muted); font-size:13px; line-height:1.6; }
+  .work-steps { display:grid; gap:8px; margin:20px 0 0; text-align:left; }
+  .work-step { color:var(--muted); font-size:13px; padding:9px 11px; border-radius:10px; background:rgba(255,255,255,0.035); }
+  .work-step.active { color:#A5F3FC; background:rgba(34,211,238,0.1); }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  @keyframes pulse { 0%,100% { opacity:0.35; transform:scale(0.85); } 50% { opacity:1; transform:scale(1.1); } }
+
   /* Split again */
   .btn-split-again { margin-top:16px; background:transparent; border:1px solid var(--border); color:var(--muted); padding:10px 24px; border-radius:10px; font-family:inherit; font-size:14px; cursor:pointer; transition:all 0.2s; }
   .btn-split-again:hover { border-color:var(--violet-light); color:var(--white); }
@@ -370,6 +387,24 @@
   </div>
 </section>
 
+
+<!-- WORK OVERLAY -->
+<div class="work-overlay" id="workOverlay" role="status" aria-live="polite" aria-modal="true">
+  <div class="work-card">
+    <div class="work-spinner" aria-hidden="true"></div>
+    <div class="work-title" id="workTitle">Preparing your split…</div>
+    <div class="work-message" id="workMessage">Uploading your song…</div>
+    <div class="work-sub" id="workSub">This usually takes around 20–30 seconds.</div>
+    <div class="progress-track"><div class="progress-fill" id="overlayProgressFill"></div></div>
+    <div class="work-steps" id="workSteps">
+      <div class="work-step active">Uploading your song…</div>
+      <div class="work-step">Creating your 15-second preview…</div>
+      <div class="work-step">Preparing the full split in the background…</div>
+      <div class="work-step">This usually takes around 20–30 seconds.</div>
+    </div>
+  </div>
+</div>
+
 <!-- PROCESSING -->
 <div class="processing" id="processing">
   <div style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:600;">Splitting your track…</div>
@@ -383,6 +418,7 @@
 <div class="results" id="results">
   <div class="results-title">Your 15-second preview is ready 🎧</div>
   <div class="results-sub">Listen to both stems below. Like what you hear? Download the full song split for $3 — one-time, no subscription.</div>
+  <div class="status-badge" id="fullStatusBadge" style="display:none;"><span class="pulse-dot"></span><span id="fullStatusText">Preparing full files…</span></div>
 
   <div class="stems-grid" id="stemsGrid"></div>
 
@@ -400,6 +436,7 @@
     <div class="paid-downloads" id="paidDownloads">
       <h3>Your paid downloads are ready ✅</h3>
       <p>Download your full split below. Use the ZIP for the easiest one-click download.</p>
+      <div class="download-expiry">Downloads are available for 24 hours.</div>
       <div class="paid-meta" id="paidMeta"></div>
       <div class="paid-download-grid" id="paidDownloadGrid"></div>
     </div>
@@ -618,7 +655,7 @@ onAuthStateChanged(auth, user => {
 // CONFIG
 const API_BASE_URL = 'https://stemify-backend-production.up.railway.app';
 const JOB_STATE_KEY = 'vocalSplitterJob';
-const POLL_MS = 4000;
+const POLL_MS = 3000;
 const PREVIEW_TIMEOUT_MS = 2 * 60 * 1000;
 // ══════════════════════════════════════════════════════════
 
@@ -630,6 +667,8 @@ let splitMode = false;
 let isBusy = false;
 let pollInterval = null;
 let fakeProgressInterval = null;
+let statusMessageInterval = null;
+let statusMessageIndex = 0;
 let selectedFormat = 'mp3';
 let previewUrlsAreValid = false;
 let previewPlayable = false;
@@ -637,10 +676,76 @@ let previewError = false;
 let previewValidationToken = 0;
 let restoredNotice = '';
 let previewPollStartedAt = null;
+const PROCESSING_MESSAGES = [
+  'Uploading your song…',
+  'Creating your 15-second preview…',
+  'Preparing the full split in the background…',
+  'This usually takes around 20–30 seconds.'
+];
 
 window._pendingPaymentReturn = false;
 
 // ── Helpers ──
+
+function setLiveProcessingMessage(message) {
+  const label = document.getElementById('processingLabel');
+  const detail = document.getElementById('processingDetail');
+  const overlayMessage = document.getElementById('workMessage');
+  const overlaySub = document.getElementById('workSub');
+  if (label) label.textContent = message;
+  if (detail) detail.textContent = 'Preparing the full split in the background. This usually takes around 20–30 seconds.';
+  if (overlayMessage) overlayMessage.textContent = message;
+  if (overlaySub) overlaySub.textContent = 'Preview and full stems are being prepared in the background.';
+  document.querySelectorAll('#workSteps .work-step').forEach((step, index) => {
+    step.classList.toggle('active', PROCESSING_MESSAGES[index] === message);
+  });
+}
+function showWorkOverlay(title = 'Preparing your split…', message = PROCESSING_MESSAGES[0]) {
+  const overlay = document.getElementById('workOverlay');
+  const titleEl = document.getElementById('workTitle');
+  if (titleEl) titleEl.textContent = title;
+  setLiveProcessingMessage(message);
+  if (overlay) overlay.classList.add('show');
+}
+function hideWorkOverlay() {
+  const overlay = document.getElementById('workOverlay');
+  if (overlay) overlay.classList.remove('show');
+}
+function startStatusMessages(startAt = 0) {
+  stopStatusMessages();
+  statusMessageIndex = startAt;
+  setLiveProcessingMessage(PROCESSING_MESSAGES[statusMessageIndex % PROCESSING_MESSAGES.length]);
+  statusMessageInterval = setInterval(() => {
+    statusMessageIndex += 1;
+    setLiveProcessingMessage(PROCESSING_MESSAGES[statusMessageIndex % PROCESSING_MESSAGES.length]);
+  }, 3200);
+}
+function stopStatusMessages() {
+  if (statusMessageInterval) clearInterval(statusMessageInterval);
+  statusMessageInterval = null;
+}
+
+function showPaymentConfirmed(message, keepOpen = false) {
+  showWorkOverlay('Payment confirmed ✓', message);
+  stopStatusMessages();
+  const sub = document.getElementById('workSub');
+  if (sub) sub.textContent = 'Downloads are available for 24 hours.';
+  if (!keepOpen) setTimeout(hideWorkOverlay, 1600);
+}
+function updateFullStatusBadge(job = currentJob) {
+  const badge = document.getElementById('fullStatusBadge');
+  const text = document.getElementById('fullStatusText');
+  if (!badge || !text) return;
+  if (job?.full_processing_status === 'processing') {
+    text.textContent = 'Preparing full files…';
+    badge.style.display = 'inline-flex';
+  } else if (job?.full_processing_status === 'ready' && job?.payment_status !== 'paid') {
+    text.textContent = 'Full files prepared and locked until payment';
+    badge.style.display = 'inline-flex';
+  } else {
+    badge.style.display = 'none';
+  }
+}
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -795,8 +900,10 @@ function showPreviewProcessing(message = 'Creating preview...') {
   const fill = document.getElementById('progressFill');
   if (results) results.classList.remove('show');
   if (processing) processing.classList.add('show');
+  showWorkOverlay('Preparing your split…', message);
+  if (!statusMessageInterval) startStatusMessages(1);
   if (label) label.textContent = message;
-  if (detail) detail.textContent = '';
+  if (detail) detail.textContent = 'Preparing the full split in the background. This usually takes around 20–30 seconds.';
   if (fill && !fill.style.width) fill.style.width = '35%';
   hidePaymentSection('preview is not ready');
 }
@@ -809,7 +916,7 @@ function maybeShowPreviewTimeout() {
 }
 
 function resetToUpload(message = '') {
-  stopPolling();
+  stopPolling(); stopStatusMessages(); hideWorkOverlay();
   document.getElementById('processing').classList.remove('show');
   document.getElementById('results').classList.remove('show');
   clearJobState();
@@ -900,9 +1007,16 @@ async function startProcessing() {
   const fill = document.getElementById('progressFill');
   const label = document.getElementById('processingLabel');
   const detail = document.getElementById('processingDetail');
-  fill.style.width = '5%'; label.textContent = 'Uploading your song...'; detail.textContent = 'Uploading your song...';
+  const overlayFill = document.getElementById('overlayProgressFill');
+  fill.style.width = '5%'; if (overlayFill) overlayFill.style.width = '5%';
+  showWorkOverlay('Preparing your split…', PROCESSING_MESSAGES[0]);
+  startStatusMessages(0);
   document.getElementById('processing').scrollIntoView({ behavior: 'smooth', block: 'center' });
-  fakeProgressInterval = setInterval(() => { const n = Math.min(92, (parseFloat(fill.style.width) || 5) + 2); fill.style.width = n + '%'; }, 900);
+  fakeProgressInterval = setInterval(() => {
+    const n = Math.min(92, (parseFloat(fill.style.width) || 5) + 2);
+    fill.style.width = n + '%';
+    if (overlayFill) overlayFill.style.width = n + '%';
+  }, 900);
   try {
     selectedFormat = getSelectedFormat();
     const fd = new FormData();
@@ -911,8 +1025,7 @@ async function startProcessing() {
     fd.append('output_format', selectedFormat);
     const startData = await fetchJson(API_BASE_URL + '/api/split', { method: 'POST', headers: await authHeaders(), body: fd });
     console.log('/api/split response', startData);
-    label.textContent = 'Creating your 15-second preview...';
-    detail.textContent = 'Creating your 15-second preview...';
+    setLiveProcessingMessage('Creating your 15-second preview…');
     currentJobId = startData.job_id;
     currentJob = startData;
     if (!currentJobId) throw new Error('Backend did not return a job id.');
@@ -922,18 +1035,22 @@ async function startProcessing() {
     startPolling();
     await refreshJob({ silent: true });
   } catch (err) {
-    stopPolling();
+    stopPolling(); stopStatusMessages(); hideWorkOverlay();
     showToast(friendlyJobError(err));
     setPaymentStatus(friendlyJobError(err), 'error');
   } finally {
-    clearInterval(fakeProgressInterval); fakeProgressInterval = null;
-    fill.style.width = '100%';
-    if (!isPreviewPending(currentJob?.preview_status)) document.getElementById('processing').classList.remove('show');
+    if (!isPreviewPending(currentJob?.preview_status)) {
+      clearInterval(fakeProgressInterval); fakeProgressInterval = null;
+      stopStatusMessages(); hideWorkOverlay();
+      fill.style.width = '100%';
+      if (overlayFill) overlayFill.style.width = '100%';
+      document.getElementById('processing').classList.remove('show');
+    }
     setBusy(false); splitMode = false;
   }
 }
 function cancelProcessing() {
-  stopPolling(); clearInterval(fakeProgressInterval); fakeProgressInterval = null;
+  stopPolling(); clearInterval(fakeProgressInterval); fakeProgressInterval = null; stopStatusMessages(); hideWorkOverlay();
   document.getElementById('processing').classList.remove('show');
   setBusy(false); splitMode = false;
   showToast('Processing cancelled. Your job may continue on the server. Use check status to resume.');
@@ -950,6 +1067,7 @@ function applyJobToUi(job) {
   saveJobState({ job: currentJob });
   console.log('preview_status', currentJob.preview_status);
   logPreviewDurationMetadata(currentJob);
+  updateFullStatusBadge(currentJob);
 
   if (isPreviewPending(currentJob.preview_status)) {
     previewPlayable = false;
@@ -958,7 +1076,12 @@ function applyJobToUi(job) {
     return;
   }
 
-  if (currentJob.preview_status === 'ready' || currentJob.preview_status === 'failed') stopPolling();
+  if (currentJob.preview_status === 'ready' || currentJob.preview_status === 'failed') {
+    clearInterval(fakeProgressInterval); fakeProgressInterval = null;
+    stopStatusMessages(); hideWorkOverlay();
+    if (currentJob.full_processing_status === 'processing') startPolling();
+    else stopPolling();
+  }
 
   document.getElementById('processing').classList.remove('show');
   document.getElementById('results').classList.add('show');
@@ -967,11 +1090,16 @@ function applyJobToUi(job) {
   const filename = currentJob.original_filename || loadJobState()?.original_filename || currentFile?.name || '';
   title.textContent = currentJob.preview_status === 'ready' ? 'Your 15-second preview is ready 🎧' : 'Preview failed';
   sub.textContent = currentJob.preview_status === 'ready'
-    ? 'Listen to both stems below. Payment appears only after every browser audio player confirms valid metadata.'
+    ? 'Listen to both stems below. Your full split is being prepared in the background, so downloads can unlock faster after payment.'
     : 'Preview could not be created. Please try another file.';
   const filenameEl = document.getElementById('resultFilename');
   if (filename) { filenameEl.textContent = 'Current track: ' + filename; filenameEl.style.display = ''; }
   else filenameEl.style.display = 'none';
+
+  if (currentJob.preview_status === 'ready' && previewPlayable && document.querySelector('#stemsGrid audio')) {
+    renderPaymentAndDownloads(currentJob);
+    return;
+  }
 
   renderPreviewSection(currentJob).then(() => renderPaymentAndDownloads(currentJob));
 }
@@ -1093,20 +1221,24 @@ function renderPaymentAndDownloads(job) {
     if (btn) btn.style.display = 'none';
     if (note) note.style.display = 'none';
     ensureCheckStatusButton();
-    setPaymentStatus('Payment confirmed. Creating your full stems...', 'success');
+    showPaymentConfirmed('Final files are almost ready. Please keep this page open.', true);
+    setPaymentStatus('Payment confirmed ✓ Final files are almost ready. Please keep this page open.', 'success');
     startPolling();
   } else if (job.payment_status === 'paid' && job.full_processing_status === 'ready') {
-    setPaymentStatus('Your stems are ready.', 'success');
+    showPaymentConfirmed('Your downloads are ready now.');
+    setPaymentStatus('Payment confirmed ✓ Your stems are ready. Downloads are available for 24 hours.', 'success');
     stopPolling();
     if (btn) btn.style.display = 'none';
     if (note) note.style.display = 'none';
     renderDownloadButtons(downloads);
   } else if (job.full_processing_status === 'failed') {
+    hideWorkOverlay();
     if (btn) btn.style.display = 'none';
     setPaymentStatus('Full processing failed. Please contact support or try again.', 'error');
     stopPolling();
   } else if (job.preview_status === 'ready') {
-    setPaymentStatus(restoredNotice || 'Preview ready. You can pay when you are ready.');
+    hideWorkOverlay();
+    setPaymentStatus(restoredNotice || 'Preview ready. Your full split is being prepared in the background, so downloads can unlock faster after payment.');
     restoredNotice = '';
   }
 }
