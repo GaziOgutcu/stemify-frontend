@@ -632,6 +632,9 @@ let pollInterval = null;
 let fakeProgressInterval = null;
 let selectedFormat = 'mp3';
 let previewUrlsAreValid = false;
+let previewPlayable = false;
+let previewError = false;
+let previewValidationToken = 0;
 let restoredNotice = '';
 let previewPollStartedAt = null;
 
@@ -762,7 +765,7 @@ function collectDownloadEntries(job = {}) {
   return entries.filter((entry, index, all) => entry.url && all.findIndex(other => other.url === entry.url) === index);
 }
 function canPay(job = currentJob) {
-  return !!(job?.preview_status === 'ready' && previewUrlsAreValid && collectPreviewUrls(job).length > 0);
+  return !!(job?.preview_status === 'ready' && previewPlayable && !previewError && collectPreviewUrls(job).length > 0);
 }
 function isPreviewPending(status) {
   return status === 'processing' || status === 'pending' || status === 'queued' || !status;
@@ -804,7 +807,7 @@ function resetToUpload(message = '') {
   document.getElementById('processing').classList.remove('show');
   document.getElementById('results').classList.remove('show');
   clearJobState();
-  currentJobId = null; currentJob = null; fileSelected = false; currentFile = null; previewUrlsAreValid = false; previewPollStartedAt = null;
+  currentJobId = null; currentJob = null; fileSelected = false; currentFile = null; previewUrlsAreValid = false; previewPlayable = false; previewError = false; previewPollStartedAt = null;
   setSelectedOptions('mp3');
   document.getElementById('dropTitle').textContent = 'Drop your track here';
   document.getElementById('splitBtn').textContent = 'Create Preview';
@@ -850,7 +853,7 @@ dropzone.addEventListener('drop', e => { e.preventDefault(); dropzone.classList.
 fileInput.addEventListener('change', e => { if (e.target.files[0] && !isBusy) handleFile(e.target.files[0]); });
 function handleFile(file) {
   stopPolling();
-  currentFile = file; fileSelected = true; currentJob = null; currentJobId = null; previewUrlsAreValid = false;
+  currentFile = file; fileSelected = true; currentJob = null; currentJobId = null; previewUrlsAreValid = false; previewPlayable = false; previewError = false;
   clearJobState(); clearPaymentStatus();
   document.getElementById('results').classList.remove('show');
   document.getElementById('dropTitle').textContent = '🎵 ' + file.name;
@@ -891,7 +894,8 @@ async function startProcessing() {
   const fill = document.getElementById('progressFill');
   const label = document.getElementById('processingLabel');
   const detail = document.getElementById('processingDetail');
-  fill.style.width = '5%'; label.textContent = 'Uploading file...'; detail.textContent = '';
+  fill.style.width = '5%'; label.textContent = 'Uploading your song...'; detail.textContent = 'Uploading your song...';
+  document.getElementById('processing').scrollIntoView({ behavior: 'smooth', block: 'center' });
   fakeProgressInterval = setInterval(() => { const n = Math.min(92, (parseFloat(fill.style.width) || 5) + 2); fill.style.width = n + '%'; }, 900);
   try {
     selectedFormat = getSelectedFormat();
@@ -901,13 +905,14 @@ async function startProcessing() {
     fd.append('output_format', selectedFormat);
     const startData = await fetchJson(API_BASE + '/api/split', { method: 'POST', headers: await authHeaders(), body: fd });
     console.log('/api/split response', startData);
-    label.textContent = 'Creating preview...';
+    label.textContent = 'Creating your 15-second preview...';
+    detail.textContent = 'Creating your 15-second preview...';
     currentJobId = startData.job_id;
     currentJob = startData;
     if (!currentJobId) throw new Error('Backend did not return a job id.');
     saveJobState({ job: startData, original_filename: startData.original_filename || currentFile?.name || '' });
     previewPollStartedAt = Date.now();
-    showPreviewProcessing('Creating preview...');
+    showPreviewProcessing('Creating your 15-second preview...');
     startPolling();
     await refreshJob({ silent: true });
   } catch (err) {
@@ -938,67 +943,127 @@ function applyJobToUi(job) {
   currentJobId = currentJob.job_id || currentJobId;
   saveJobState({ job: currentJob });
   console.log('preview_status', currentJob.preview_status);
+  logPreviewDurationMetadata(currentJob);
 
   if (isPreviewPending(currentJob.preview_status)) {
-    maybeShowPreviewTimeout() || showPreviewProcessing('Creating preview...');
+    previewPlayable = false;
+    previewError = false;
+    maybeShowPreviewTimeout() || showPreviewProcessing('Creating your 15-second preview...');
     return;
   }
+
+  if (currentJob.preview_status === 'ready' || currentJob.preview_status === 'failed') stopPolling();
 
   document.getElementById('processing').classList.remove('show');
   document.getElementById('results').classList.add('show');
   const title = document.querySelector('.results-title');
   const sub = document.querySelector('.results-sub');
   const filename = currentJob.original_filename || loadJobState()?.original_filename || currentFile?.name || '';
-  title.textContent = currentJob.preview_status === 'ready' ? 'Your 15-second preview is ready 🎧' : 'Upload status';
-  sub.textContent = 'Four simple sections: upload, preview, payment, and download. Status is restored from the backend job record.';
+  title.textContent = currentJob.preview_status === 'ready' ? 'Your 15-second preview is ready 🎧' : 'Preview failed';
+  sub.textContent = currentJob.preview_status === 'ready'
+    ? 'Listen to both stems below. Payment appears only after every browser audio player confirms valid metadata.'
+    : 'Preview could not be created. Please try another file.';
   const filenameEl = document.getElementById('resultFilename');
   if (filename) { filenameEl.textContent = 'Current track: ' + filename; filenameEl.style.display = ''; }
   else filenameEl.style.display = 'none';
-  renderPreviewSection(currentJob);
-  renderPaymentAndDownloads(currentJob);
+
+  renderPreviewSection(currentJob).then(() => renderPaymentAndDownloads(currentJob));
 }
-function renderPreviewSection(job) {
+function getPreviewDurationEntries(job = {}) {
+  const source = job.preview_durations_seconds || job.previewDurationsSeconds || job.preview_durations || job.previewDurations || null;
+  if (!source) return [];
+  if (Array.isArray(source)) return source.map((value, index) => ({ key: `stem_${index + 1}`, duration: Number(value) }));
+  if (typeof source === 'object') return Object.entries(source).map(([key, value]) => ({ key, duration: Number(value) }));
+  return [{ key: 'preview', duration: Number(source) }];
+}
+function logPreviewDurationMetadata(job = {}) {
+  const durations = getPreviewDurationEntries(job);
+  if (durations.length) console.log('preview_durations_seconds', durations);
+}
+function backendDurationsAreValid(job = {}) {
+  const durations = getPreviewDurationEntries(job);
+  if (!durations.length) return true;
+  return durations.every(({ duration }) => Number.isFinite(duration) && duration > 0);
+}
+function failPreview(message = 'Preview could not be loaded. Please try uploading again.') {
+  previewUrlsAreValid = false;
+  previewPlayable = false;
+  previewError = true;
+  setPaymentStatus(message, 'error');
+  hidePaymentSection('preview failed validation');
+}
+function waitForAudioMetadata(audio) {
+  return new Promise((resolve, reject) => {
+    const cleanup = () => ['loadedmetadata', 'error', 'stalled', 'abort'].forEach(type => audio.removeEventListener(type, handlers[type]));
+    const validate = () => {
+      const duration = Number(audio.duration);
+      console.log('preview audio loadedmetadata', audio.currentSrc || audio.src, duration);
+      if (Number.isFinite(duration) && duration > 0) { cleanup(); resolve(duration); }
+      else { cleanup(); reject(new Error('Invalid preview duration')); }
+    };
+    const fail = (event) => { cleanup(); reject(new Error('Preview audio ' + event.type)); };
+    const handlers = { loadedmetadata: validate, error: fail, stalled: fail, abort: fail };
+    Object.entries(handlers).forEach(([type, handler]) => audio.addEventListener(type, handler, { once: true }));
+    audio.load();
+  });
+}
+async function renderPreviewSection(job) {
+  const token = ++previewValidationToken;
   const grid = document.getElementById('stemsGrid');
   grid.innerHTML = '';
   previewUrlsAreValid = false;
+  previewPlayable = false;
+  previewError = false;
   if (job.preview_status === 'failed') {
-    setPaymentStatus(job.preview_error || job.error || 'Preview failed. Please try uploading again.', 'error');
+    const message = job.preview_error || job.error || 'Preview failed. Please try uploading again.';
+    failPreview(message);
+    grid.innerHTML = `<div class="stem-card" style="grid-column:1/-1;text-align:center;">${safeText(message)}<br><button class="btn-split-again" onclick="resetToUpload()">Try another file</button></div>`;
     return;
   }
   if (isPreviewPending(job.preview_status)) {
-    showPreviewProcessing('Creating preview...');
+    showPreviewProcessing('Creating your 15-second preview...');
     return;
   }
   const previews = collectPreviewUrls(job);
   console.log('preview URLs found', previews);
   if (job.preview_status !== 'ready' || previews.length === 0) {
-    setPaymentStatus('Preview is not ready yet. Please create a preview first.');
-    hidePaymentSection('preview ready without URLs');
+    failPreview('Preview could not be loaded. Please try uploading again.');
     return;
   }
-  previewUrlsAreValid = true;
+  if (!backendDurationsAreValid(job)) {
+    failPreview('Preview could not be loaded. Please try uploading again.');
+    return;
+  }
   previews.forEach(({ key, url }, i) => {
     const def = STEM_DISPLAY[key] || { name: key.replace(/_/g, ' '), icon:'🎵', color:'#8B5CF6', key:'15-sec preview' };
+    const durationEntries = getPreviewDurationEntries(job);
+    const backendDuration = durationEntries.find(d => d.key === key)?.duration ?? durationEntries[i]?.duration;
     const card = document.createElement('div'); card.className = 'stem-card';
     card.innerHTML = `
       <div class="stem-header">
         <div class="stem-icon" style="background:${def.color}22;">${def.icon}</div>
-        <div><div class="stem-name">${safeText(def.name)}</div><div class="stem-key">${safeText(def.key)} · 15-sec preview</div></div>
+        <div><div class="stem-name">${safeText(def.name)}</div><div class="stem-key">${safeText(def.key)} · 15-sec preview${backendDuration ? ` · ${backendDuration.toFixed(1)}s` : ''}</div></div>
       </div>
       <div class="mini-wave" id="mw${i}"></div>
       <audio controls preload="metadata" src="${safeText(url)}" style="width:100%;"></audio>`;
     grid.appendChild(card);
     const audio = card.querySelector('audio');
-    audio.addEventListener('error', handlePreviewAudioError);
-    audio.addEventListener('stalled', handlePreviewAudioError);
+    ['error', 'stalled', 'abort'].forEach(type => audio.addEventListener(type, handlePreviewAudioError));
     buildMiniWave(i, def.color);
   });
+  try {
+    const durations = await Promise.all([...grid.querySelectorAll('audio')].map(waitForAudioMetadata));
+    if (token !== previewValidationToken) return;
+    console.log('validated preview audio durations', durations);
+    previewUrlsAreValid = true;
+    previewPlayable = true;
+    previewError = false;
+  } catch (err) {
+    if (token === previewValidationToken) failPreview('Preview could not be loaded. Please try uploading again.');
+  }
 }
 function handlePreviewAudioError() {
-  previewUrlsAreValid = false;
-  setPaymentStatus('Preview could not be loaded. Please try uploading again.', 'error');
-  const btn = document.getElementById('btnCheckout');
-  if (btn) btn.disabled = true;
+  failPreview('Preview could not be loaded. Please try uploading again.');
 }
 function renderPaymentAndDownloads(job) {
   const btn = document.getElementById('btnCheckout');
@@ -1007,7 +1072,7 @@ function renderPaymentAndDownloads(job) {
   const grid = document.getElementById('paidDownloadGrid');
   const downloads = collectDownloadEntries(job);
   if (grid) grid.innerHTML = '';
-  if (isPreviewPending(job.preview_status) || job.preview_status === 'failed' || collectPreviewUrls(job).length === 0) {
+  if (isPreviewPending(job.preview_status) || job.preview_status === 'failed' || previewError || !previewPlayable || collectPreviewUrls(job).length === 0) {
     hidePaymentSection('preview status is ' + (job.preview_status || 'undefined'));
     return;
   }
