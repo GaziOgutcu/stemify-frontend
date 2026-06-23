@@ -707,7 +707,7 @@
     <div class="work-steps" id="workSteps">
       <div class="work-step active">Uploading your song…</div>
       <div class="work-step">Creating your 15-second preview…</div>
-      <div class="work-step">Validating preview audio…</div>
+      <div class="work-step">Preparing the full split in the background…</div>
       <div class="work-step">This usually takes around 20–30 seconds.</div>
     </div>
   </div>
@@ -1907,7 +1907,13 @@ function renderPaymentAndDownloads(job) {
     }
 
     if (job.full_processing_status === 'processing') {
-      setPaymentStatus('Payment confirmed. Final files are almost ready.', 'success');
+      // Payment is complete, but full-song Demucs can take a few minutes.
+      // Do not keep the blocking overlay/spinner open forever; keep polling inline.
+      hideWorkOverlay();
+      document.getElementById('processing')?.classList.remove('show');
+      setBusy(false);
+      splitMode = false;
+      setPaymentStatus('Payment confirmed ✅ Full downloads are being prepared. You can keep this tab open; the buttons will appear automatically when ready.', 'success');
       startPolling();
       return;
     }
@@ -1937,11 +1943,16 @@ function renderPaymentAndDownloads(job) {
   if (wrap) wrap.classList.remove('show');
 
   if (job.payment_status === 'paid' && job.full_processing_status === 'processing') {
+    // Do not show a blocking spinner after payment; the backend is working on full files.
+    hideWorkOverlay();
+    document.getElementById('processing')?.classList.remove('show');
+    setBusy(false);
+    splitMode = false;
     if (btn) btn.style.display = 'none';
     if (note) note.style.display = 'none';
     ensureCheckStatusButton();
-    showPaymentConfirmed('Your payment has been received and your full audio stems are now being processed.', true);
-    setPaymentStatus('Payment confirmed ✓ Your full split is processing. Please keep this page open. Downloads will also be available for 24 hours from your profile menu.', 'success');
+    showPaymentConfirmed('Your payment has been received. Full audio stems are being processed in the background.', false);
+    setPaymentStatus('Payment confirmed ✓ Full split is processing. Download buttons will appear here automatically when ready.', 'success');
     startPolling();
   } else if (job.payment_status === 'paid' && job.full_processing_status === 'ready') {
     hideWorkOverlay();
