@@ -853,7 +853,7 @@ onAuthStateChanged(auth, user => {
     document.getElementById('dropzone').classList.remove('locked');
     updateSplitBtn();
     if (window.restoreSavedJobOnLoad) window.restoreSavedJobOnLoad();
-renderDownloadHistory();
+    if (window.renderDownloadHistory) window.renderDownloadHistory();
   } else {
     const btn = document.getElementById('navSignInBtn');
     btn.style.display = '';
@@ -1212,24 +1212,60 @@ function collectDownloadEntries(job = {}) {
 }
 
 function saveDownloadHistory(job = currentJob) {
+  // Backend /api/my-jobs is now the primary source of truth for history.
+  // Keep localStorage only as a short-term fallback so the latest paid job
+  // can still appear if the history API is temporarily unavailable.
   if (!job?.job_id || job.payment_status !== 'paid' || job.full_processing_status !== 'ready') return;
   const entries = collectDownloadEntries(job);
   if (!entries.length) return;
   try {
     const history = JSON.parse(localStorage.getItem('vsDownloadHistory') || '[]');
-    const item = {
-      job_id: job.job_id,
-      original_filename: job.original_filename || loadJobState()?.original_filename || 'stems',
-      output_format: job.output_format || selectedFormat || 'mp3',
-      created_at: job.created_at || Date.now(),
-      source_duration_seconds: job.source_duration_seconds || null,
-      entries
-    };
+    const item = normalizeHistoryJob(job);
+    if (!item || !item.entries.length) return;
     const next = [item, ...history.filter(x => x.job_id !== item.job_id)].slice(0, 10);
     localStorage.setItem('vsDownloadHistory', JSON.stringify(next));
   } catch(_) {}
-  renderDownloadHistory();
+  const panel = document.getElementById('downloadHistoryPanel');
+  if (panel?.classList.contains('show')) {
+    loadDownloadHistoryFromBackend();
+  }
 }
+
+function normalizeHistoryJob(job = {}) {
+  const entries = collectDownloadEntries(job);
+  const stemUrls = job.stem_urls || job.download_stem_urls || job.full_stems || job.fullStemUrls || {};
+  const normalizedJob = {
+    ...job,
+    download_urls: job.download_urls || {
+      zip: job.zip_url || job.download_url || job.zip_download_url,
+      stems: stemUrls
+    },
+    full_stems: job.full_stems || stemUrls,
+    download_stem_urls: job.download_stem_urls || stemUrls
+  };
+  const normalizedEntries = entries.length ? entries : collectDownloadEntries(normalizedJob);
+  if (!job.job_id || !normalizedEntries.length) return null;
+  return {
+    job_id: job.job_id,
+    original_filename: job.original_filename || job.filename || job.track_name || 'stems',
+    track_name: job.track_name || '',
+    output_format: job.output_format || selectedFormat || 'mp3',
+    created_at: job.created_at || Date.now(),
+    expires_at: job.expires_at || null,
+    source_duration_seconds: job.source_duration_seconds || job.duration_seconds || null,
+    entries: normalizedEntries
+  };
+}
+
+function getLocalDownloadHistory() {
+  try {
+    const raw = JSON.parse(localStorage.getItem('vsDownloadHistory') || '[]');
+    return Array.isArray(raw) ? raw : [];
+  } catch(_) {
+    return [];
+  }
+}
+
 function getHistoryIcon(entry) {
   const key = String(entry?.key || entry?.label || '').toLowerCase();
   if (key.includes('zip')) return { icon: '📦', type: 'zip', title: 'Download ZIP' };
@@ -1238,27 +1274,38 @@ function getHistoryIcon(entry) {
   return { icon: '⬇', type: 'stem', title: 'Download ' + (entry?.label || entry?.key || 'stem') };
 }
 
-function renderDownloadHistory() {
+function renderDownloadHistory(history = null, options = {}) {
   const list = document.getElementById('downloadHistoryList');
   const count = document.getElementById('downloadHistoryCount');
   if (!list) return;
-  let history = [];
-  try { history = JSON.parse(localStorage.getItem('vsDownloadHistory') || '[]'); } catch(_) {}
-  if (count) count.textContent = history.length ? String(Math.min(history.length, 10)) : '0';
-  if (!history.length) {
+
+  const items = Array.isArray(history) ? history : getLocalDownloadHistory();
+  if (count) count.textContent = items.length ? String(Math.min(items.length, 10)) : '0';
+
+  if (!items.length) {
     list.className = 'download-history-empty';
-    list.innerHTML = 'No paid downloads ready yet.';
+    list.innerHTML = options.loading
+      ? 'Loading your downloads…'
+      : 'No paid downloads ready yet.';
     return;
   }
+
   list.className = 'download-history-list';
   list.innerHTML = '';
-  history.forEach(item => {
-    const baseName = (item.original_filename || 'stems').replace(/\.[^.]+$/, '');
+  items.slice(0, 10).forEach(item => {
+    const baseName = (item.original_filename || item.track_name || 'stems').replace(/\.[^.]+$/, '');
     const ext = item.output_format || 'mp3';
     const row = document.createElement('div');
     row.className = 'download-history-row';
-    const meta = (ext || 'mp3').toUpperCase() + (item.source_duration_seconds ? ' · ' + Math.round(item.source_duration_seconds) + 's' : '') + ' · 24h';
-    row.innerHTML = '<div class="download-history-main"><div class="download-history-name" title="' + safeText(baseName) + '">🎵 ' + safeText(baseName) + '</div><div class="download-history-meta">' + safeText(meta) + '</div></div><div class="download-history-actions"></div>';
+
+    const createdText = item.created_at ? timeAgoText(item.created_at) : '';
+    const expiryText = item.expires_at ? 'expires ' + timeAgoText(item.expires_at, true) : 'available for 24h';
+    const metaParts = [(ext || 'mp3').toUpperCase()];
+    if (item.source_duration_seconds) metaParts.push(Math.round(item.source_duration_seconds) + 's');
+    if (createdText) metaParts.push(createdText);
+    metaParts.push(expiryText);
+
+    row.innerHTML = '<div class="download-history-main"><div class="download-history-name" title="' + safeText(baseName) + '">🎵 ' + safeText(baseName) + '</div><div class="download-history-meta">' + safeText(metaParts.join(' · ')) + '</div></div><div class="download-history-actions"></div>';
     const actions = row.querySelector('.download-history-actions');
     const sorted = (item.entries || []).slice().sort((a,b) => {
       const order = key => {
@@ -1270,6 +1317,7 @@ function renderDownloadHistory() {
       };
       return order(a.key || a.label) - order(b.key || b.label);
     });
+
     sorted.forEach(entry => {
       const info = getHistoryIcon(entry);
       const btn = document.createElement('button');
@@ -1285,12 +1333,66 @@ function renderDownloadHistory() {
     list.appendChild(row);
   });
 }
-function toggleDownloadHistory(event) {
-  if (event) event.stopPropagation();
-  renderDownloadHistory();
-  const panel = document.getElementById('downloadHistoryPanel');
-  if (panel) panel.classList.toggle('show');
+
+function timeAgoText(value, future = false) {
+  let ts = Number(value);
+  if (!Number.isFinite(ts)) return '';
+  if (ts < 1000000000000) ts *= 1000;
+  const diffMs = future ? ts - Date.now() : Date.now() - ts;
+  const abs = Math.max(0, Math.abs(diffMs));
+  const mins = Math.round(abs / 60000);
+  if (mins < 1) return future ? 'now' : 'just now';
+  if (mins < 60) return future ? 'in ' + mins + 'm' : mins + 'm ago';
+  const hours = Math.round(mins / 60);
+  if (hours < 24) return future ? 'in ' + hours + 'h' : hours + 'h ago';
+  const days = Math.round(hours / 24);
+  return future ? 'in ' + days + 'd' : days + 'd ago';
 }
+
+async function loadDownloadHistoryFromBackend() {
+  const list = document.getElementById('downloadHistoryList');
+  const count = document.getElementById('downloadHistoryCount');
+  if (list) {
+    list.className = 'download-history-empty';
+    list.innerHTML = 'Loading your downloads…';
+  }
+  if (count) count.textContent = '…';
+
+  try {
+    const data = await fetchJson(`${API_BASE_URL}/api/my-jobs`, {
+      headers: await authHeaders()
+    });
+    const jobs = Array.isArray(data) ? data : (Array.isArray(data.jobs) ? data.jobs : []);
+    const normalized = jobs.map(normalizeHistoryJob).filter(Boolean);
+    renderDownloadHistory(normalized, { source: 'backend' });
+
+    // Keep a copy as fallback only. The backend remains the source of truth.
+    try { localStorage.setItem('vsDownloadHistory', JSON.stringify(normalized.slice(0, 10))); } catch(_) {}
+    return normalized;
+  } catch (err) {
+    console.warn('Could not load backend download history:', err);
+    const fallback = getLocalDownloadHistory();
+    renderDownloadHistory(fallback, { source: 'local-fallback' });
+    if (list && !fallback.length) {
+      list.className = 'download-history-empty';
+      list.innerHTML = 'Could not load your download history. Please try again in a moment.';
+    }
+    return fallback;
+  }
+}
+
+async function toggleDownloadHistory(event) {
+  if (event) event.stopPropagation();
+  const panel = document.getElementById('downloadHistoryPanel');
+  if (!panel) return;
+  const willShow = !panel.classList.contains('show');
+  panel.classList.toggle('show');
+  if (willShow) {
+    await loadDownloadHistoryFromBackend();
+  }
+}
+window.renderDownloadHistory = renderDownloadHistory;
+window.loadDownloadHistoryFromBackend = loadDownloadHistoryFromBackend;
 window.toggleDownloadHistory = toggleDownloadHistory;
 document.addEventListener('click', () => {
   const panel = document.getElementById('downloadHistoryPanel');
