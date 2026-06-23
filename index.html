@@ -1562,17 +1562,51 @@ function renderDownloadButtons(entries) {
   }
   // Inline buttons (existing UI)
   entries.sort((a,b) => (a.key === 'zip' ? -1 : b.key === 'zip' ? 1 : 0)).forEach(entry => {
-    const a = document.createElement('a');
-    a.className = 'paid-download-btn' + (entry.key === 'zip' ? ' primary' : '');
-    a.href = toApiUrl(entry.url);
-    a.target = '_blank';
-    a.rel = 'noopener';
-    a.textContent = entry.key === 'zip' ? '⬇ Download ZIP' : '⬇ Download ' + entry.label;
-    grid.appendChild(a);
+    const btn = document.createElement('button');
+    btn.className = 'paid-download-btn' + (entry.key === 'zip' ? ' primary' : '');
+    const ext = (currentJob?.output_format || 'mp3');
+    const baseName2 = (currentJob?.original_filename || 'stems').replace(/\.[^.]+$/, '');
+    let dlFilename2;
+    if (entry.key === 'zip') dlFilename2 = baseName2 + '_stems.zip';
+    else if (entry.key === 'vocals') dlFilename2 = baseName2 + '_vocals.' + ext;
+    else dlFilename2 = baseName2 + '_instrumental.' + ext;
+    btn.textContent = entry.key === 'zip' ? '⬇ Download ZIP' : '⬇ Download ' + entry.label;
+    btn.onclick = function() { authenticatedDownload(toApiUrl(entry.url), dlFilename2); };
+    grid.appendChild(btn);
   });
   wrap.classList.add('show');
   // Also show the success modal
   showSuccessModal(entries);
+}
+
+async function authenticatedDownload(url, filename) {
+  const btn = event.currentTarget;
+  const origHTML = btn.innerHTML;
+  btn.innerHTML = '<span class="spinner"></span> Preparing…';
+  btn.disabled = true;
+  try {
+    const token = await window._getIdToken();
+    const resp = await fetch(url, { headers: { 'Authorization': 'Bearer ' + token } });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.detail || err.message || 'Download failed (' + resp.status + ')');
+    }
+    const blob = await resp.blob();
+    const objUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = objUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(objUrl), 5000);
+    btn.innerHTML = '✓ Downloaded!';
+    setTimeout(() => { btn.innerHTML = origHTML; btn.disabled = false; }, 3000);
+  } catch(err) {
+    showToast(err.message || 'Download failed. Please try again.');
+    btn.innerHTML = origHTML;
+    btn.disabled = false;
+  }
 }
 
 function showSuccessModal(entries) {
@@ -1586,28 +1620,34 @@ function showSuccessModal(entries) {
 
   // Track info
   const filename = currentJob?.original_filename || loadJobState()?.original_filename || '';
+  const baseName = filename.replace(/\.[^.]+$/, '') || 'stems';
   if (filename) {
-    trackName.textContent = filename.replace(/\.[^.]+$/, '');
+    trackName.textContent = baseName;
     const fmt = (currentJob?.output_format || 'mp3').toUpperCase();
     const dur = currentJob?.source_duration_seconds;
-    trackMeta.textContent = fmt + (dur ? ' · ' + Math.round(dur / 60) + ' min ' + (Math.round(dur) % 60) + ' sec' : '');
+    trackMeta.textContent = fmt + (dur ? ' · ' + Math.floor(dur / 60) + ' min ' + (Math.round(dur) % 60) + ' sec' : '');
     trackRow.style.display = 'flex';
   }
 
-  // Download buttons
+  // Authenticated download buttons
   entries.sort((a,b) => (a.key === 'zip' ? -1 : b.key === 'zip' ? 1 : 0)).forEach(entry => {
-    const a = document.createElement('a');
-    a.className = 'success-modal-btn ' + (entry.key === 'zip' ? 'zip' : 'stem');
-    a.href = toApiUrl(entry.url);
-    a.target = '_blank';
-    a.rel = 'noopener';
+    const btn = document.createElement('button');
+    btn.className = 'success-modal-btn ' + (entry.key === 'zip' ? 'zip' : 'stem');
+    const ext = (currentJob?.output_format || 'mp3');
+    let dlFilename, label;
     if (entry.key === 'zip') {
-      a.innerHTML = '<span style="font-size:18px;">⬇</span> Download ZIP (both stems)';
+      dlFilename = baseName + '_stems.zip';
+      label = '<span style="font-size:18px;">⬇</span> Download ZIP (both stems)';
+    } else if (entry.key === 'vocals') {
+      dlFilename = baseName + '_vocals.' + ext;
+      label = '🎤 Download Vocals';
     } else {
-      const label = entry.key === 'vocals' ? '🎤 Download Vocals' : '🎸 Download Instrumental';
-      a.innerHTML = '<span style="font-size:16px;">⬇</span> ' + label;
+      dlFilename = baseName + '_instrumental.' + ext;
+      label = '🎸 Download Instrumental';
     }
-    dlGrid.appendChild(a);
+    btn.innerHTML = label;
+    btn.onclick = function() { authenticatedDownload(toApiUrl(entry.url), dlFilename); };
+    dlGrid.appendChild(btn);
   });
 
   modal.classList.add('show');
