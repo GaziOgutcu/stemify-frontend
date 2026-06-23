@@ -406,6 +406,50 @@
   .download-history-footer { margin-top:10px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.07); color:var(--muted); font-size:11px; line-height:1.4; }
   .user-pill { cursor:pointer; }
 
+
+  /* Mobile navigation / account drawer */
+  .mobile-menu-btn { display:none; align-items:center; justify-content:center; width:42px; height:42px; border:1px solid var(--border); border-radius:12px; background:rgba(109,40,217,0.12); color:var(--white); font-size:22px; cursor:pointer; }
+  .mobile-menu-overlay { position:fixed; inset:0; z-index:320; display:none; background:rgba(2,6,23,0.72); backdrop-filter:blur(8px); }
+  .mobile-menu-overlay.show { display:block; }
+  .mobile-menu-card { position:absolute; top:12px; right:12px; left:12px; border:1px solid var(--border); border-radius:20px; background:linear-gradient(180deg,#111827,#080c18); box-shadow:0 24px 80px rgba(0,0,0,0.5), var(--glow); padding:18px; }
+  .mobile-menu-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; }
+  .mobile-menu-title { font-family:'Space Grotesk',sans-serif; font-size:16px; font-weight:700; }
+  .mobile-menu-close { width:38px; height:38px; border:1px solid rgba(255,255,255,0.1); border-radius:12px; background:rgba(255,255,255,0.04); color:var(--white); font-size:18px; cursor:pointer; }
+  .mobile-menu-links { display:grid; gap:10px; margin-bottom:14px; }
+  .mobile-menu-link, .mobile-menu-action { display:flex; align-items:center; justify-content:space-between; gap:10px; width:100%; padding:13px 14px; border-radius:14px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.035); color:var(--white); text-decoration:none; font-family:'Space Grotesk',sans-serif; font-size:14px; font-weight:700; cursor:pointer; }
+  .mobile-menu-link:hover, .mobile-menu-action:hover { border-color:rgba(34,211,238,0.28); background:rgba(34,211,238,0.08); }
+  .mobile-account-card { display:none; align-items:center; gap:12px; padding:12px; border:1px solid rgba(255,255,255,0.08); border-radius:16px; background:rgba(255,255,255,0.035); margin-bottom:12px; }
+  .mobile-account-card.show { display:flex; }
+  .mobile-account-avatar { width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,var(--violet),var(--cyan)); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:800; flex-shrink:0; }
+  .mobile-account-name { font-size:13px; color:var(--white); font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .mobile-account-sub { color:var(--muted); font-size:11px; margin-top:2px; }
+  .mobile-menu-auth-logged-in, .mobile-menu-auth-logged-out { display:none; gap:10px; }
+  .mobile-menu-auth-logged-in.show, .mobile-menu-auth-logged-out.show { display:grid; }
+  .mobile-menu-primary { background:linear-gradient(135deg,var(--violet),#4c1d95); border-color:rgba(139,92,246,0.55); }
+  .mobile-menu-danger { color:#FCA5A5; }
+  .history-close-btn { display:none; width:34px; height:34px; border:1px solid rgba(255,255,255,0.1); border-radius:10px; background:rgba(255,255,255,0.04); color:var(--white); cursor:pointer; font-size:18px; }
+  body.no-scroll { overflow:hidden; }
+
+  @media (max-width:640px) {
+    nav { padding:12px 14px; }
+    .logo { font-size:18px; }
+    .mobile-menu-btn { display:flex; margin-left:auto; }
+    nav .nav-links { display:flex !important; gap:0; }
+    nav .nav-links > a.nav-link,
+    nav .nav-links > #navSignInBtn,
+    nav .nav-links > .user-area > .user-pill { display:none !important; }
+    .download-history-panel { position:fixed; left:12px; right:12px; top:76px; width:auto; max-height:calc(100vh - 96px); overflow:auto; z-index:380; padding:16px; border-radius:18px; }
+    .download-history-head { align-items:center; }
+    .history-close-btn { display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .download-history-list { max-height:none; }
+    .download-history-row { grid-template-columns:1fr; align-items:stretch; gap:9px; padding:12px; }
+    .download-history-actions { justify-content:space-between; }
+    .download-history-icon-btn { flex:1; min-width:0; height:42px; }
+    .download-history-name { font-size:14px; }
+    .download-history-meta { font-size:11px; }
+  }
+
+
   /* ── SUCCESS MODAL ── */
   .success-modal-overlay {
     position:fixed; inset:0; z-index:200;
@@ -506,6 +550,7 @@
     </div>
     <span class="logo-text">Vocal<span>Splitter</span></span>
   </a>
+  <button class="mobile-menu-btn" id="mobileMenuBtn" onclick="toggleMobileMenu(true)" aria-label="Open menu" aria-expanded="false">☰</button>
   <div class="nav-links">
     <a href="#how" class="nav-link">How it works</a>
     <a href="#pricing" class="nav-link">Pricing</a>
@@ -533,6 +578,7 @@
             <div class="download-history-sub">Recent paid downloads. Available for 24 hours.</div>
           </div>
           <div class="download-history-count" id="downloadHistoryCount">0</div>
+          <button class="history-close-btn" onclick="event.stopPropagation(); closeDownloadHistory()" aria-label="Close download history">×</button>
         </div>
         <div id="downloadHistoryList" class="download-history-empty">No paid downloads ready yet.</div>
         <div class="download-history-footer">Icons: 📦 ZIP · 🎤 Vocals · 🎹 Instrumental</div>
@@ -540,6 +586,36 @@
     </div>
   </div>
 </nav>
+
+<!-- MOBILE MENU -->
+<div class="mobile-menu-overlay" id="mobileMenuOverlay" onclick="toggleMobileMenu(false)">
+  <div class="mobile-menu-card" onclick="event.stopPropagation()">
+    <div class="mobile-menu-head">
+      <div class="mobile-menu-title">VocalSplitter Menu</div>
+      <button class="mobile-menu-close" onclick="toggleMobileMenu(false)" aria-label="Close menu">×</button>
+    </div>
+    <div class="mobile-account-card" id="mobileAccountCard">
+      <div class="mobile-account-avatar" id="mobileAccountAvatar">?</div>
+      <div style="min-width:0;">
+        <div class="mobile-account-name" id="mobileAccountName">Signed in</div>
+        <div class="mobile-account-sub">Downloads are saved for 24 hours</div>
+      </div>
+    </div>
+    <div class="mobile-menu-links">
+      <a href="#how" class="mobile-menu-link" onclick="toggleMobileMenu(false)">How it works <span>→</span></a>
+      <a href="#pricing" class="mobile-menu-link" onclick="toggleMobileMenu(false)">Pricing <span>→</span></a>
+      <a href="#faq" class="mobile-menu-link" onclick="toggleMobileMenu(false)">FAQ <span>→</span></a>
+    </div>
+    <div class="mobile-menu-auth-logged-out" id="mobileLoggedOutActions">
+      <button class="mobile-menu-action mobile-menu-primary" onclick="toggleMobileMenu(false); signInWithGoogle()">Continue with Google <span>G</span></button>
+    </div>
+    <div class="mobile-menu-auth-logged-in" id="mobileLoggedInActions">
+      <button class="mobile-menu-action mobile-menu-primary" onclick="toggleMobileMenu(false); toggleDownloadHistory(event)">Download History <span>📦</span></button>
+      <button class="mobile-menu-action" onclick="toggleMobileMenu(false); document.getElementById('fileInput').click(); window.scrollTo({top:0,behavior:'smooth'});">Upload a song <span>🎵</span></button>
+      <button class="mobile-menu-action mobile-menu-danger" onclick="toggleMobileMenu(false); signOutUser()">Sign out <span>×</span></button>
+    </div>
+  </div>
+</div>
 
 <!-- HERO -->
 <section class="hero">
@@ -835,12 +911,39 @@ window._getIdToken = async () => {
   return user.getIdToken();
 };
 
+
+window.toggleMobileMenu = (show = null) => {
+  const overlay = document.getElementById('mobileMenuOverlay');
+  const btn = document.getElementById('mobileMenuBtn');
+  if (!overlay) return;
+  const shouldShow = show === null ? !overlay.classList.contains('show') : !!show;
+  overlay.classList.toggle('show', shouldShow);
+  document.body.classList.toggle('no-scroll', shouldShow);
+  if (btn) btn.setAttribute('aria-expanded', shouldShow ? 'true' : 'false');
+};
+
+window.closeDownloadHistory = () => {
+  const panel = document.getElementById('downloadHistoryPanel');
+  if (panel) panel.classList.remove('show');
+  document.body.classList.remove('no-scroll');
+};
+
 onAuthStateChanged(auth, user => {
   if (user) {
     document.getElementById('navSignInBtn').style.display  = 'none';
     document.getElementById('navLoggedIn').classList.add('show');
     document.getElementById('navUserArea').classList.add('show');
     document.getElementById('navName').textContent         = user.displayName || user.email;
+    const mobileName = document.getElementById('mobileAccountName');
+    const mobileAvatar = document.getElementById('mobileAccountAvatar');
+    const mobileAccount = document.getElementById('mobileAccountCard');
+    const mobileIn = document.getElementById('mobileLoggedInActions');
+    const mobileOut = document.getElementById('mobileLoggedOutActions');
+    if (mobileName) mobileName.textContent = user.displayName || user.email;
+    if (mobileAvatar) mobileAvatar.textContent = (user.displayName||user.email||'?')[0].toUpperCase();
+    if (mobileAccount) mobileAccount.classList.add('show');
+    if (mobileIn) mobileIn.classList.add('show');
+    if (mobileOut) mobileOut.classList.remove('show');
     document.getElementById('navAvatarFallback').textContent = (user.displayName||user.email||'?')[0].toUpperCase();
     if (user.photoURL) {
       const img = document.getElementById('navPhoto');
@@ -861,6 +964,14 @@ onAuthStateChanged(auth, user => {
     btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 18 18"><path fill="#fff" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908C16.658 14.075 17.64 11.767 17.64 9.2Z"/><path fill="#fff" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18Z"/><path fill="#fff" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332Z"/><path fill="#fff" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58Z"/></svg> Sign in with Google';
     document.getElementById('navLoggedIn').classList.remove('show');
     document.getElementById('navUserArea').classList.remove('show');
+    const mobileAccount = document.getElementById('mobileAccountCard');
+    const mobileIn = document.getElementById('mobileLoggedInActions');
+    const mobileOut = document.getElementById('mobileLoggedOutActions');
+    if (mobileAccount) mobileAccount.classList.remove('show');
+    if (mobileIn) mobileIn.classList.remove('show');
+    if (mobileOut) mobileOut.classList.add('show');
+    window.toggleMobileMenu(false);
+    window.closeDownloadHistory();
     document.getElementById('authGate').classList.add('show');
     document.getElementById('legalCheck').classList.remove('show');
     document.getElementById('splitOptions').classList.remove('show');
@@ -1386,7 +1497,10 @@ async function toggleDownloadHistory(event) {
   const panel = document.getElementById('downloadHistoryPanel');
   if (!panel) return;
   const willShow = !panel.classList.contains('show');
-  panel.classList.toggle('show');
+  panel.classList.toggle('show', willShow);
+  if (window.matchMedia && window.matchMedia('(max-width: 640px)').matches) {
+    document.body.classList.toggle('no-scroll', willShow);
+  }
   if (willShow) {
     await loadDownloadHistoryFromBackend();
   }
@@ -1397,6 +1511,15 @@ window.toggleDownloadHistory = toggleDownloadHistory;
 document.addEventListener('click', () => {
   const panel = document.getElementById('downloadHistoryPanel');
   if (panel) panel.classList.remove('show');
+  const mobileMenu = document.getElementById('mobileMenuOverlay');
+  if (mobileMenu && !mobileMenu.classList.contains('show')) document.body.classList.remove('no-scroll');
+});
+
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') {
+    if (window.toggleMobileMenu) window.toggleMobileMenu(false);
+    if (window.closeDownloadHistory) window.closeDownloadHistory();
+  }
 });
 
 function canPay(job = currentJob) {
