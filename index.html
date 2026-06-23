@@ -374,6 +374,30 @@
     footer { padding:32px 32px; }
   }
 
+
+
+  /* Download history dropdown */
+  .user-area { position:relative; display:none; align-items:center; gap:8px; }
+  .user-area.show { display:flex; }
+  .download-history-panel {
+    position:absolute; right:0; top:48px; width:min(360px, calc(100vw - 32px));
+    display:none; z-index:260; padding:14px;
+    background:linear-gradient(180deg,#111827,#080c18);
+    border:1px solid var(--border); border-radius:16px;
+    box-shadow:0 24px 80px rgba(0,0,0,0.48), var(--glow);
+  }
+  .download-history-panel.show { display:block; }
+  .download-history-title { font-family:'Space Grotesk',sans-serif; font-size:15px; font-weight:700; margin-bottom:4px; }
+  .download-history-sub { color:var(--muted); font-size:12px; line-height:1.45; margin-bottom:12px; }
+  .download-history-item { border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.035); border-radius:12px; padding:12px; margin-top:10px; }
+  .download-history-name { color:var(--white); font-size:13px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:4px; }
+  .download-history-meta { color:var(--muted); font-size:11px; margin-bottom:10px; }
+  .download-history-actions { display:grid; gap:8px; }
+  .download-history-btn { width:100%; border:1px solid rgba(34,211,238,0.35); background:rgba(34,211,238,0.1); color:var(--white); padding:9px 10px; border-radius:10px; cursor:pointer; font-family:'Space Grotesk',sans-serif; font-size:13px; font-weight:600; }
+  .download-history-btn.primary { background:linear-gradient(135deg,var(--green),#0f766e); border-color:rgba(16,185,129,0.55); }
+  .download-history-empty { color:var(--muted); font-size:12px; line-height:1.5; padding:8px 0; }
+  .user-pill { cursor:pointer; }
+
   /* ── SUCCESS MODAL ── */
   .success-modal-overlay {
     position:fixed; inset:0; z-index:200;
@@ -486,11 +510,19 @@
     </button>
 
     <!-- Logged in -->
-    <div class="user-pill" id="navLoggedIn">
-      <img class="user-avatar" id="navPhoto" src="" alt="" onerror="this.style.display='none';document.getElementById('navAvatarFallback').style.display='flex'">
-      <div class="user-avatar-fallback" id="navAvatarFallback" style="display:none;">?</div>
-      <span class="user-name" id="navName"></span>
-      <button class="btn-signout" onclick="signOutUser()" title="Sign out">✕</button>
+    <div class="user-area" id="navUserArea">
+      <div class="user-pill" id="navLoggedIn" onclick="toggleDownloadHistory(event)">
+        <img class="user-avatar" id="navPhoto" src="" alt="" onerror="this.style.display='none';document.getElementById('navAvatarFallback').style.display='flex'">
+        <div class="user-avatar-fallback" id="navAvatarFallback" style="display:none;">?</div>
+        <span class="user-name" id="navName"></span>
+        <span title="Downloads">⬇</span>
+        <button class="btn-signout" onclick="event.stopPropagation(); signOutUser()" title="Sign out">✕</button>
+      </div>
+      <div class="download-history-panel" id="downloadHistoryPanel" onclick="event.stopPropagation()">
+        <div class="download-history-title">Download History</div>
+        <div class="download-history-sub">Your latest paid split downloads appear here.</div>
+        <div id="downloadHistoryList" class="download-history-empty">No paid downloads ready yet.</div>
+      </div>
     </div>
   </div>
 </nav>
@@ -793,6 +825,7 @@ onAuthStateChanged(auth, user => {
   if (user) {
     document.getElementById('navSignInBtn').style.display  = 'none';
     document.getElementById('navLoggedIn').classList.add('show');
+    document.getElementById('navUserArea').classList.add('show');
     document.getElementById('navName').textContent         = user.displayName || user.email;
     document.getElementById('navAvatarFallback').textContent = (user.displayName||user.email||'?')[0].toUpperCase();
     if (user.photoURL) {
@@ -806,12 +839,14 @@ onAuthStateChanged(auth, user => {
     document.getElementById('dropzone').classList.remove('locked');
     updateSplitBtn();
     if (window.restoreSavedJobOnLoad) window.restoreSavedJobOnLoad();
+renderDownloadHistory();
   } else {
     const btn = document.getElementById('navSignInBtn');
     btn.style.display = '';
     btn.disabled = false;
     btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 18 18"><path fill="#fff" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908C16.658 14.075 17.64 11.767 17.64 9.2Z"/><path fill="#fff" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18Z"/><path fill="#fff" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332Z"/><path fill="#fff" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58Z"/></svg> Sign in with Google';
     document.getElementById('navLoggedIn').classList.remove('show');
+    document.getElementById('navUserArea').classList.remove('show');
     document.getElementById('authGate').classList.add('show');
     document.getElementById('legalCheck').classList.remove('show');
     document.getElementById('splitOptions').classList.remove('show');
@@ -1121,6 +1156,70 @@ function collectDownloadEntries(job = {}) {
   ['zip_download_url', 'zip_url', 'download_url'].forEach(key => { if (job[key]) add('zip', job[key]); });
   return entries.filter((entry, index, all) => entry.url && all.findIndex(other => other.url === entry.url) === index);
 }
+
+function saveDownloadHistory(job = currentJob) {
+  if (!job?.job_id || job.payment_status !== 'paid' || job.full_processing_status !== 'ready') return;
+  const entries = collectDownloadEntries(job);
+  if (!entries.length) return;
+  try {
+    const history = JSON.parse(localStorage.getItem('vsDownloadHistory') || '[]');
+    const item = {
+      job_id: job.job_id,
+      original_filename: job.original_filename || loadJobState()?.original_filename || 'stems',
+      output_format: job.output_format || selectedFormat || 'mp3',
+      created_at: job.created_at || Date.now(),
+      source_duration_seconds: job.source_duration_seconds || null,
+      entries
+    };
+    const next = [item, ...history.filter(x => x.job_id !== item.job_id)].slice(0, 10);
+    localStorage.setItem('vsDownloadHistory', JSON.stringify(next));
+  } catch(_) {}
+  renderDownloadHistory();
+}
+function renderDownloadHistory() {
+  const list = document.getElementById('downloadHistoryList');
+  if (!list) return;
+  let history = [];
+  try { history = JSON.parse(localStorage.getItem('vsDownloadHistory') || '[]'); } catch(_) {}
+  if (!history.length) {
+    list.className = 'download-history-empty';
+    list.innerHTML = 'No paid downloads ready yet.';
+    return;
+  }
+  list.className = '';
+  list.innerHTML = '';
+  history.forEach(item => {
+    const baseName = (item.original_filename || 'stems').replace(/\.[^.]+$/, '');
+    const ext = item.output_format || 'mp3';
+    const box = document.createElement('div');
+    box.className = 'download-history-item';
+    const meta = (ext || 'mp3').toUpperCase() + (item.source_duration_seconds ? ' · ' + Math.round(item.source_duration_seconds) + 's' : '') + ' · available for 24h';
+    box.innerHTML = '<div class="download-history-name">🎵 ' + safeText(baseName) + '</div><div class="download-history-meta">' + safeText(meta) + '</div><div class="download-history-actions"></div>';
+    const actions = box.querySelector('.download-history-actions');
+    (item.entries || []).sort((a,b) => (a.key === 'zip' ? -1 : b.key === 'zip' ? 1 : 0)).forEach(entry => {
+      const btn = document.createElement('button');
+      btn.className = 'download-history-btn' + (entry.key === 'zip' ? ' primary' : '');
+      const label = entry.key === 'zip' ? '⬇ Download ZIP' : '⬇ Download ' + (entry.label || entry.key);
+      btn.textContent = label;
+      const filename = entry.key === 'zip' ? baseName + '_stems.zip' : baseName + '_' + entry.key + '.' + ext;
+      btn.onclick = function(e) { e.stopPropagation(); authenticatedDownload(toApiUrl(entry.url), filename); };
+      actions.appendChild(btn);
+    });
+    list.appendChild(box);
+  });
+}
+function toggleDownloadHistory(event) {
+  if (event) event.stopPropagation();
+  renderDownloadHistory();
+  const panel = document.getElementById('downloadHistoryPanel');
+  if (panel) panel.classList.toggle('show');
+}
+window.toggleDownloadHistory = toggleDownloadHistory;
+document.addEventListener('click', () => {
+  const panel = document.getElementById('downloadHistoryPanel');
+  if (panel) panel.classList.remove('show');
+});
+
 function canPay(job = currentJob) {
   // ── FIX 4: when job is paid, bypass previewPlayable check entirely ──
   if (job?.payment_status === 'paid') return true;
@@ -1485,9 +1584,11 @@ function renderPaymentAndDownloads(job) {
     }
 
     if (job.full_processing_status === 'ready') {
+      hideWorkOverlay();
       setPaymentStatus('Your paid downloads are ready ✅', 'success');
       renderDownloadButtons(downloads);
       if (downloads.length) {
+        saveDownloadHistory(job);
         stopPolling();
         paymentReturnActive = false;
         window._pendingPaymentReturn = false;
@@ -1535,12 +1636,13 @@ function renderPaymentAndDownloads(job) {
     setPaymentStatus('Payment confirmed ✓ Final files are almost ready. Please keep this page open.', 'success');
     startPolling();
   } else if (job.payment_status === 'paid' && job.full_processing_status === 'ready') {
-    showPaymentConfirmed('Your downloads are ready now.');
+    hideWorkOverlay();
     setPaymentStatus('Payment confirmed ✓ Your stems are ready. Downloads are available for 24 hours.', 'success');
     stopPolling();
     if (btn) btn.style.display = 'none';
     if (note) note.style.display = 'none';
     renderDownloadButtons(downloads);
+    saveDownloadHistory(job);
   } else if (job.full_processing_status === 'failed') {
     hideWorkOverlay();
     if (btn) btn.style.display = 'none';
@@ -1575,8 +1677,7 @@ function renderDownloadButtons(entries) {
     grid.appendChild(btn);
   });
   wrap.classList.add('show');
-  // Also show the success modal
-  showSuccessModal(entries);
+  // Do not auto-open a popup here. Downloads are shown inline and in Download History.
 }
 
 async function authenticatedDownload(url, filename) {
@@ -1657,6 +1758,9 @@ function showSuccessModal(entries) {
 function closeSuccessModal() {
   const modal = document.getElementById('successModal');
   if (modal) modal.classList.remove('show');
+  hideWorkOverlay();
+  paymentReturnActive = false;
+  window._pendingPaymentReturn = false;
   document.body.style.overflow = '';
 }
 function buildMiniWave(i, color) {
@@ -1746,6 +1850,7 @@ window.restoreSavedJobOnLoad = function restoreSavedJobOnLoad() {
 };
 activatePaymentReturnFromUrl();
 window.restoreSavedJobOnLoad();
+renderDownloadHistory();
 
 // ── SMOOTH SCROLL ──
 document.querySelectorAll('a[href^="#"]').forEach(a => {
