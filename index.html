@@ -928,11 +928,38 @@ function setLiveProcessingMessage(message) {
     step.classList.toggle('active', PROCESSING_MESSAGES[index] === message);
   });
 }
+function setWorkSteps(steps = [], activeIndex = 0) {
+  const container = document.getElementById('workSteps');
+  if (!container || !steps.length) return;
+  container.innerHTML = steps.map((step, index) => (
+    '<div class="work-step ' + (index === activeIndex ? 'active' : '') + '">' + step + '</div>'
+  )).join('');
+}
 function showWorkOverlay(title = 'Preparing your split…', message = PROCESSING_MESSAGES[0]) {
   const overlay = document.getElementById('workOverlay');
   const titleEl = document.getElementById('workTitle');
   if (titleEl) titleEl.textContent = title;
   setLiveProcessingMessage(message);
+  if (overlay) overlay.classList.add('show');
+}
+function showPaymentProcessingOverlay(message = 'Your payment has been received and your full audio stems are now being processed.') {
+  const overlay = document.getElementById('workOverlay');
+  const titleEl = document.getElementById('workTitle');
+  const messageEl = document.getElementById('workMessage');
+  const subEl = document.getElementById('workSub');
+  if (titleEl) titleEl.textContent = 'Payment confirmed ✓';
+  if (messageEl) messageEl.textContent = message;
+  if (subEl) {
+    subEl.innerHTML = 'Processing can take up to <strong style="color:#EEF2FF;">5 minutes</strong> depending on song length and server load.<br><br>' +
+      '<strong style="color:#FBBF24;">Please do not refresh, close, or leave this page</strong> while your files are being prepared.<br><br>' +
+      'Your download buttons will appear automatically. You can also access your downloads for <strong style="color:#EEF2FF;">24 hours</strong> from your profile menu in the top-right corner.';
+  }
+  setWorkSteps([
+    '✓ Payment received',
+    'Processing full audio stems…',
+    'Creating download package…',
+    'Preparing your download links…'
+  ], 1);
   if (overlay) overlay.classList.add('show');
 }
 function hideWorkOverlay() {
@@ -962,10 +989,14 @@ function stopStatusMessages() {
   statusMessageInterval = null;
 }
 function showPaymentConfirmed(message, keepOpen = false) {
-  showWorkOverlay('Payment confirmed ✓', message);
   stopStatusMessages();
+  if (keepOpen) {
+    showPaymentProcessingOverlay(message || 'Your payment has been received and your full audio stems are now being processed.');
+    return;
+  }
+  showWorkOverlay('Payment confirmed ✓', message || 'Your payment has been received.');
   const sub = document.getElementById('workSub');
-  if (sub) sub.textContent = 'Downloads are available for 24 hours.';
+  if (sub) sub.textContent = 'Downloads are available for 24 hours from your profile menu in the top-right corner.';
   if (!keepOpen) setTimeout(hideWorkOverlay, 1600);
 }
 function updateFullStatusBadge(job = currentJob) {
@@ -1085,7 +1116,7 @@ function activatePaymentReturnFromUrl() {
   document.getElementById('results').classList.add('show');
   hidePayDueToPaymentReturn();
   setPaymentStatus('Payment confirmed — checking your download status…', 'success');
-  showWorkOverlay('Payment confirmed ✓', 'Fetching your download links…');
+  showPaymentProcessingOverlay();
 
   // Clean the URL right away so a refresh doesn't re-trigger this
   history.replaceState({}, document.title, window.location.pathname + window.location.hash);
@@ -1647,8 +1678,8 @@ function renderPaymentAndDownloads(job) {
     if (btn) btn.style.display = 'none';
     if (note) note.style.display = 'none';
     ensureCheckStatusButton();
-    showPaymentConfirmed('Final files are almost ready. Please keep this page open.', true);
-    setPaymentStatus('Payment confirmed ✓ Final files are almost ready. Please keep this page open.', 'success');
+    showPaymentConfirmed('Your payment has been received and your full audio stems are now being processed.', true);
+    setPaymentStatus('Payment confirmed ✓ Your full split is processing. Please keep this page open. Downloads will also be available for 24 hours from your profile menu.', 'success');
     startPolling();
   } else if (job.payment_status === 'paid' && job.full_processing_status === 'ready') {
     hideWorkOverlay();
