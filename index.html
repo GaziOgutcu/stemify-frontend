@@ -939,6 +939,15 @@ function hideWorkOverlay() {
   const overlay = document.getElementById('workOverlay');
   if (overlay) overlay.classList.remove('show');
 }
+function scrollToPaidDownloadsWhenReady(job = currentJob, force = false) {
+  if (!job?.job_id) return;
+  if (!force && window._lastDownloadAutoScrollJobId === job.job_id) return;
+  window._lastDownloadAutoScrollJobId = job.job_id;
+  setTimeout(() => {
+    const target = document.getElementById('paidDownloads') || document.getElementById('downloadCta') || document.getElementById('results');
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 180);
+}
 function startStatusMessages(startAt = 0) {
   stopStatusMessages();
   statusMessageIndex = startAt;
@@ -1589,9 +1598,15 @@ function renderPaymentAndDownloads(job) {
       renderDownloadButtons(downloads);
       if (downloads.length) {
         saveDownloadHistory(job);
+        const shouldAutoScrollDownloads = paymentReturnActive || window._pendingPaymentReturn || document.getElementById('workOverlay')?.classList.contains('show');
         stopPolling();
+        hideWorkOverlay();
         paymentReturnActive = false;
         window._pendingPaymentReturn = false;
+        if (shouldAutoScrollDownloads) {
+          showToast('Your downloads are ready ✅');
+          scrollToPaidDownloadsWhenReady(job, true);
+        }
       } else {
         startPolling();
       }
@@ -1643,6 +1658,13 @@ function renderPaymentAndDownloads(job) {
     if (note) note.style.display = 'none';
     renderDownloadButtons(downloads);
     saveDownloadHistory(job);
+    const shouldAutoScrollDownloads = paymentReturnActive || window._pendingPaymentReturn || document.getElementById('workOverlay')?.classList.contains('show');
+    paymentReturnActive = false;
+    window._pendingPaymentReturn = false;
+    if (downloads.length && shouldAutoScrollDownloads) {
+      showToast('Your downloads are ready ✅');
+      scrollToPaidDownloadsWhenReady(job, true);
+    }
   } else if (job.full_processing_status === 'failed') {
     hideWorkOverlay();
     if (btn) btn.style.display = 'none';
