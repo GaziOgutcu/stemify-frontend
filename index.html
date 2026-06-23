@@ -380,22 +380,30 @@
   .user-area { position:relative; display:none; align-items:center; gap:8px; }
   .user-area.show { display:flex; }
   .download-history-panel {
-    position:absolute; right:0; top:48px; width:min(360px, calc(100vw - 32px));
+    position:absolute; right:0; top:48px; width:min(430px, calc(100vw - 32px));
     display:none; z-index:260; padding:14px;
     background:linear-gradient(180deg,#111827,#080c18);
     border:1px solid var(--border); border-radius:16px;
     box-shadow:0 24px 80px rgba(0,0,0,0.48), var(--glow);
   }
   .download-history-panel.show { display:block; }
+  .download-history-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:10px; }
   .download-history-title { font-family:'Space Grotesk',sans-serif; font-size:15px; font-weight:700; margin-bottom:4px; }
-  .download-history-sub { color:var(--muted); font-size:12px; line-height:1.45; margin-bottom:12px; }
-  .download-history-item { border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.035); border-radius:12px; padding:12px; margin-top:10px; }
-  .download-history-name { color:var(--white); font-size:13px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:4px; }
-  .download-history-meta { color:var(--muted); font-size:11px; margin-bottom:10px; }
-  .download-history-actions { display:grid; gap:8px; }
-  .download-history-btn { width:100%; border:1px solid rgba(34,211,238,0.35); background:rgba(34,211,238,0.1); color:var(--white); padding:9px 10px; border-radius:10px; cursor:pointer; font-family:'Space Grotesk',sans-serif; font-size:13px; font-weight:600; }
-  .download-history-btn.primary { background:linear-gradient(135deg,var(--green),#0f766e); border-color:rgba(16,185,129,0.55); }
+  .download-history-sub { color:var(--muted); font-size:12px; line-height:1.45; }
+  .download-history-count { flex-shrink:0; color:#A5F3FC; background:rgba(34,211,238,0.09); border:1px solid rgba(34,211,238,0.22); border-radius:999px; padding:4px 9px; font-size:11px; font-weight:700; }
+  .download-history-list { display:grid; gap:6px; max-height:420px; overflow:auto; padding-right:2px; }
+  .download-history-row { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:10px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.035); border-radius:12px; padding:10px 10px; transition:background 0.18s,border-color 0.18s; }
+  .download-history-row:hover { background:rgba(255,255,255,0.055); border-color:rgba(34,211,238,0.25); }
+  .download-history-main { min-width:0; }
+  .download-history-name { color:var(--white); font-size:13px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:3px; }
+  .download-history-meta { color:var(--muted); font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .download-history-actions { display:flex; align-items:center; gap:6px; flex-shrink:0; }
+  .download-history-icon-btn { width:34px; height:34px; display:inline-flex; align-items:center; justify-content:center; border:1px solid rgba(34,211,238,0.28); background:rgba(34,211,238,0.08); color:var(--white); border-radius:10px; cursor:pointer; font-size:16px; transition:all 0.18s; }
+  .download-history-icon-btn:hover { border-color:var(--cyan); background:rgba(34,211,238,0.18); transform:translateY(-1px); }
+  .download-history-icon-btn.zip { background:rgba(16,185,129,0.12); border-color:rgba(16,185,129,0.35); }
+  .download-history-icon-btn.zip:hover { background:rgba(16,185,129,0.22); border-color:rgba(16,185,129,0.65); }
   .download-history-empty { color:var(--muted); font-size:12px; line-height:1.5; padding:8px 0; }
+  .download-history-footer { margin-top:10px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.07); color:var(--muted); font-size:11px; line-height:1.4; }
   .user-pill { cursor:pointer; }
 
   /* ── SUCCESS MODAL ── */
@@ -519,9 +527,15 @@
         <button class="btn-signout" onclick="event.stopPropagation(); signOutUser()" title="Sign out">✕</button>
       </div>
       <div class="download-history-panel" id="downloadHistoryPanel" onclick="event.stopPropagation()">
-        <div class="download-history-title">Download History</div>
-        <div class="download-history-sub">Your latest paid split downloads appear here.</div>
+        <div class="download-history-head">
+          <div>
+            <div class="download-history-title">Download History</div>
+            <div class="download-history-sub">Recent paid downloads. Available for 24 hours.</div>
+          </div>
+          <div class="download-history-count" id="downloadHistoryCount">0</div>
+        </div>
         <div id="downloadHistoryList" class="download-history-empty">No paid downloads ready yet.</div>
+        <div class="download-history-footer">Icons: 📦 ZIP · 🎤 Vocals · 🎹 Instrumental</div>
       </div>
     </div>
   </div>
@@ -1216,36 +1230,59 @@ function saveDownloadHistory(job = currentJob) {
   } catch(_) {}
   renderDownloadHistory();
 }
+function getHistoryIcon(entry) {
+  const key = String(entry?.key || entry?.label || '').toLowerCase();
+  if (key.includes('zip')) return { icon: '📦', type: 'zip', title: 'Download ZIP' };
+  if (key.includes('vocal') && !key.includes('no_vocal')) return { icon: '🎤', type: 'vocals', title: 'Download vocals' };
+  if (key.includes('instrument') || key.includes('no_vocal') || key.includes('karaoke')) return { icon: '🎹', type: 'instrumental', title: 'Download instrumental' };
+  return { icon: '⬇', type: 'stem', title: 'Download ' + (entry?.label || entry?.key || 'stem') };
+}
+
 function renderDownloadHistory() {
   const list = document.getElementById('downloadHistoryList');
+  const count = document.getElementById('downloadHistoryCount');
   if (!list) return;
   let history = [];
   try { history = JSON.parse(localStorage.getItem('vsDownloadHistory') || '[]'); } catch(_) {}
+  if (count) count.textContent = history.length ? String(Math.min(history.length, 10)) : '0';
   if (!history.length) {
     list.className = 'download-history-empty';
     list.innerHTML = 'No paid downloads ready yet.';
     return;
   }
-  list.className = '';
+  list.className = 'download-history-list';
   list.innerHTML = '';
   history.forEach(item => {
     const baseName = (item.original_filename || 'stems').replace(/\.[^.]+$/, '');
     const ext = item.output_format || 'mp3';
-    const box = document.createElement('div');
-    box.className = 'download-history-item';
-    const meta = (ext || 'mp3').toUpperCase() + (item.source_duration_seconds ? ' · ' + Math.round(item.source_duration_seconds) + 's' : '') + ' · available for 24h';
-    box.innerHTML = '<div class="download-history-name">🎵 ' + safeText(baseName) + '</div><div class="download-history-meta">' + safeText(meta) + '</div><div class="download-history-actions"></div>';
-    const actions = box.querySelector('.download-history-actions');
-    (item.entries || []).sort((a,b) => (a.key === 'zip' ? -1 : b.key === 'zip' ? 1 : 0)).forEach(entry => {
+    const row = document.createElement('div');
+    row.className = 'download-history-row';
+    const meta = (ext || 'mp3').toUpperCase() + (item.source_duration_seconds ? ' · ' + Math.round(item.source_duration_seconds) + 's' : '') + ' · 24h';
+    row.innerHTML = '<div class="download-history-main"><div class="download-history-name" title="' + safeText(baseName) + '">🎵 ' + safeText(baseName) + '</div><div class="download-history-meta">' + safeText(meta) + '</div></div><div class="download-history-actions"></div>';
+    const actions = row.querySelector('.download-history-actions');
+    const sorted = (item.entries || []).slice().sort((a,b) => {
+      const order = key => {
+        key = String(key || '').toLowerCase();
+        if (key.includes('zip')) return 0;
+        if (key.includes('vocal') && !key.includes('no_vocal')) return 1;
+        if (key.includes('instrument') || key.includes('no_vocal')) return 2;
+        return 3;
+      };
+      return order(a.key || a.label) - order(b.key || b.label);
+    });
+    sorted.forEach(entry => {
+      const info = getHistoryIcon(entry);
       const btn = document.createElement('button');
-      btn.className = 'download-history-btn' + (entry.key === 'zip' ? ' primary' : '');
-      const label = entry.key === 'zip' ? '⬇ Download ZIP' : '⬇ Download ' + (entry.label || entry.key);
-      btn.textContent = label;
-      const filename = entry.key === 'zip' ? baseName + '_stems.zip' : baseName + '_' + entry.key + '.' + ext;
+      btn.type = 'button';
+      btn.className = 'download-history-icon-btn ' + info.type;
+      btn.textContent = info.icon;
+      btn.title = info.title;
+      btn.setAttribute('aria-label', info.title + ' for ' + baseName);
+      const filename = info.type === 'zip' ? baseName + '_stems.zip' : baseName + '_' + (entry.key || info.type) + '.' + ext;
       btn.onclick = function(e) { e.stopPropagation(); authenticatedDownload(toApiUrl(entry.url), filename); };
       actions.appendChild(btn);
     });
-    list.appendChild(box);
+    list.appendChild(row);
   });
 }
 function toggleDownloadHistory(event) {
