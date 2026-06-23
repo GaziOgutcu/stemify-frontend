@@ -269,12 +269,109 @@
   @keyframes spin { to { transform:rotate(360deg); } }
 
   @media (max-width:640px) {
-    nav { padding:14px 20px; }
+    /* Nav */
+    nav { padding:14px 18px; }
     .nav-links { display:none; }
-    footer { flex-direction:column; padding:32px 20px; }
-    .stems-grid { grid-template-columns:1fr; }
+
+    /* Hero */
+    .hero { padding:100px 18px 60px; }
+    h1 { font-size:clamp(30px,9vw,48px); letter-spacing:-1px; }
+    .hero-sub { font-size:15px; }
+    .value-row { gap:8px; }
+    .value-pill { font-size:12px; padding:6px 13px; }
+
+    /* Auth gate */
+    .btn-google { font-size:14px; padding:12px 20px; }
+
+    /* Waveform */
+    .waveform-wrap { height:56px; margin-top:28px; }
+
+    /* Upload / dropzone */
+    .upload-section { margin-top:20px; }
+    .dropzone { padding:32px 18px; }
+    .drop-title { font-size:15px; }
+    .drop-sub { font-size:13px; }
+    .btn-split { font-size:15px; padding:14px; }
+
+    /* Split options */
     .split-options { grid-template-columns:1fr; }
+    .segmented.format { grid-template-columns:1fr 1fr; }
+
+    /* Legal check */
+    .legal-check { padding:12px 14px; }
+    .legal-check-text { font-size:11px; }
+
+    /* Work overlay */
+    .work-card { padding:22px 18px; }
+    .work-title { font-size:18px; }
+    .work-message { font-size:14px; }
+    .work-spinner { width:40px; height:40px; }
+
+    /* Results */
+    .results { margin-top:40px; padding:0 16px; }
+    .results-title { font-size:18px; }
+    .results-sub { font-size:13px; margin-bottom:20px; }
+    .stems-grid { grid-template-columns:1fr; gap:12px; }
+    .stem-card { padding:16px; }
+    .stem-name { font-size:14px; }
+
+    /* Download CTA */
+    .download-cta { padding:20px 18px; border-radius:16px; }
+    .download-cta h3 { font-size:17px; }
+    .download-cta p { font-size:13px; }
+    .price-tag { font-size:28px; }
+    .btn-checkout { font-size:15px; padding:13px; }
+    .paid-download-btn { font-size:14px; padding:11px 14px; }
+
+    /* How it works */
+    .how { margin-top:80px; padding:0 18px; }
+    .steps { grid-template-columns:1fr; gap:16px; }
+    .step { padding:22px 18px; }
+    .step-num { font-size:34px; }
+
+    /* Use cases */
+    .usecases { margin-top:70px; padding:0 18px; }
+    .uc-grid { grid-template-columns:1fr 1fr; gap:10px; }
+    .uc-card { padding:16px 14px; }
+    .uc-title { font-size:13px; }
+    .uc-desc { font-size:11px; }
+
+    /* Pricing */
+    .pricing { margin-top:70px; padding:0 18px; }
     .pricing-card { padding:28px 20px; }
+    .pricing-price { font-size:52px; }
+    .pricing-features li { font-size:13px; }
+
+    /* FAQ */
+    .faq { margin-top:70px; padding:0 18px; }
+    .faq-q { font-size:14px; padding:16px 0; }
+    .faq-a { font-size:13px; }
+
+    /* Legal */
+    .legal-section { margin-top:60px; padding:0 18px; }
+    .legal-box { padding:20px 18px; }
+    .legal-box p { font-size:12px; }
+
+    /* Section titles */
+    .section-title { font-size:clamp(22px,6vw,32px); margin-bottom:36px; }
+
+    /* Footer */
+    footer { flex-direction:column; align-items:flex-start; padding:28px 18px; gap:12px; }
+    .footer-links { flex-wrap:wrap; gap:16px; }
+
+    /* Toast */
+    .toast { bottom:16px; right:16px; left:16px; max-width:none; font-size:13px; }
+  }
+
+  /* Tablet tweaks */
+  @media (min-width:641px) and (max-width:900px) {
+    nav { padding:14px 28px; }
+    .hero { padding:110px 32px 70px; }
+    h1 { font-size:clamp(34px,5.5vw,58px); }
+    .uc-grid { grid-template-columns:repeat(3,1fr); }
+    .steps { grid-template-columns:repeat(3,1fr); }
+    .how, .usecases, .pricing, .faq, .legal-section { padding:0 32px; }
+    footer { padding:32px 32px; }
   }
 </style>
 </head>
@@ -488,8 +585,8 @@
   <div class="section-title">Straightforward. No surprises.</div>
   <div class="pricing-card">
     <div class="pricing-label">Pay as you go</div>
-    <div class="pricing-price"><sup>$</sup>3</div>
-    <div class="pricing-desc">per song · full-length vocals + instrumental · WAV download</div>
+    <div class="pricing-price"><sup>$</sup>0<span style="font-size:40px">.99</span></div>
+    <div class="pricing-desc">per song · full-length vocals + instrumental · no subscription</div>
     <ul class="pricing-features">
       <li><span class="ck">✓</span> Free 15-second preview on every upload</li>
       <li><span class="ck">✓</span> Full-length vocals track (WAV)</li>
@@ -556,10 +653,6 @@
 
 <div class="toast" id="toast"></div>
 
-<!-- ══════════════════════════════════════════════════════════
-     FIREBASE SDK  (module)
-     Replace firebaseConfig values if your project changes.
-══════════════════════════════════════════════════════════ -->
 <script type="module">
 import { initializeApp }       from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
@@ -579,7 +672,6 @@ const app      = initializeApp(firebaseConfig);
 const auth     = getAuth(app);
 const provider = new GoogleAuthProvider();
 
-// ── expose to non-module global scope ──
 window._fbAuth     = auth;
 window._fbProvider = provider;
 
@@ -610,7 +702,6 @@ window._getIdToken = async () => {
 
 onAuthStateChanged(auth, user => {
   if (user) {
-    // Update nav
     document.getElementById('navSignInBtn').style.display  = 'none';
     document.getElementById('navLoggedIn').classList.add('show');
     document.getElementById('navName').textContent         = user.displayName || user.email;
@@ -620,7 +711,6 @@ onAuthStateChanged(auth, user => {
       img.src = user.photoURL;
       img.style.display = 'block';
     }
-    // Show upload area
     document.getElementById('authGate').classList.remove('show');
     document.getElementById('legalCheck').classList.add('show');
     document.getElementById('splitOptions').classList.add('show');
@@ -628,7 +718,6 @@ onAuthStateChanged(auth, user => {
     updateSplitBtn();
     if (window.restoreSavedJobOnLoad) window.restoreSavedJobOnLoad();
   } else {
-    // Logged out state
     const btn = document.getElementById('navSignInBtn');
     btn.style.display = '';
     btn.disabled = false;
@@ -671,7 +760,7 @@ let statusMessageInterval = null;
 let statusMessageIndex = 0;
 let selectedFormat = 'mp3';
 let previewUrlsAreValid = false;
-let previewPlayable = false;
+let previewPlayable = false;   // in-memory flag — also persisted to localStorage
 let previewError = false;
 let previewValidationToken = 0;
 let restoredNotice = '';
@@ -686,8 +775,22 @@ const PROCESSING_MESSAGES = [
 
 window._pendingPaymentReturn = false;
 
-// ── Helpers ──
+// ── FIX 1: persist / restore previewPlayable so a page reload doesn't kill it ──
+function persistPreviewPlayable(jobId, value) {
+  if (!jobId) return;
+  try { localStorage.setItem('vsPreviewPlayable_' + jobId, value ? '1' : '0'); } catch(_) {}
+}
+function restorePreviewPlayable(jobId) {
+  if (!jobId) return false;
+  try { return localStorage.getItem('vsPreviewPlayable_' + jobId) === '1'; } catch(_) { return false; }
+}
+function clearPreviewPlayable(jobId) {
+  if (!jobId) return;
+  try { localStorage.removeItem('vsPreviewPlayable_' + jobId); } catch(_) {}
+}
+// ────────────────────────────────────────────────────────────────────────────────
 
+// ── Helpers ──
 function setLiveProcessingMessage(message) {
   const label = document.getElementById('processingLabel');
   const detail = document.getElementById('processingDetail');
@@ -725,7 +828,6 @@ function stopStatusMessages() {
   if (statusMessageInterval) clearInterval(statusMessageInterval);
   statusMessageInterval = null;
 }
-
 function showPaymentConfirmed(message, keepOpen = false) {
   showWorkOverlay('Payment confirmed ✓', message);
   stopStatusMessages();
@@ -833,7 +935,6 @@ function hidePayDueToPaymentReturn() {
   const note = document.getElementById('checkoutNote');
   if (btn) { btn.disabled = true; btn.style.display = 'none'; }
   if (note) note.style.display = 'none';
-  console.log('Pay hidden due to payment return');
 }
 function activatePaymentReturnFromUrl() {
   const params = new URLSearchParams(window.location.search);
@@ -843,6 +944,9 @@ function activatePaymentReturnFromUrl() {
   paymentReturnActive = true;
   window._pendingPaymentReturn = true;
   currentJobId = jobId;
+  // ── FIX 2: restore previewPlayable on payment return so canPay() works ──
+  previewPlayable = restorePreviewPlayable(jobId);
+  // ────────────────────────────────────────────────────────────────────────
   saveJobState({ job_id: jobId, checkout_session_id: sessionId });
   hidePayDueToPaymentReturn();
   setPaymentStatus('Payment confirmed — checking your download status…', 'success');
@@ -850,19 +954,20 @@ function activatePaymentReturnFromUrl() {
   refreshJob({ silent: true });
   const cleanUrl = window.location.pathname + window.location.hash;
   history.replaceState({}, document.title, cleanUrl);
-  console.log('paymentReturnActive', paymentReturnActive);
   return true;
 }
 function restoreLightweightState(state) {
   if (!state?.job_id) return;
   currentJobId = state.job_id;
   setSelectedOptions(state.selected_format || 'mp3');
+  // ── FIX 3: restore previewPlayable when restoring a previous session ──
+  previewPlayable = restorePreviewPlayable(state.job_id);
+  // ─────────────────────────────────────────────────────────────────────
   if (state.original_filename) {
     fileSelected = false;
     document.getElementById('dropTitle').textContent = '🎵 ' + state.original_filename;
   }
 }
-
 
 function toApiUrl(url) {
   if (!url) return '';
@@ -906,6 +1011,9 @@ function collectDownloadEntries(job = {}) {
   return entries.filter((entry, index, all) => entry.url && all.findIndex(other => other.url === entry.url) === index);
 }
 function canPay(job = currentJob) {
+  // ── FIX 4: when job is paid, bypass previewPlayable check entirely ──
+  if (job?.payment_status === 'paid') return true;
+  // ────────────────────────────────────────────────────────────────────
   return !!(job?.preview_status === 'ready' && previewPlayable && !previewError && collectPreviewUrls(job).length > 0);
 }
 function isPreviewPending(status) {
@@ -920,7 +1028,6 @@ function hidePaymentSection(reason = '') {
   if (note) note.style.display = 'none';
   if (wrap) wrap.classList.remove('show');
   if (check) check.style.display = 'none';
-  console.log('Pay button hidden', reason || 'not eligible');
 }
 function showPreviewProcessing(message = 'Creating preview...') {
   const processing = document.getElementById('processing');
@@ -949,6 +1056,9 @@ function resetToUpload(message = '') {
   stopPolling(); stopStatusMessages(); hideWorkOverlay();
   document.getElementById('processing').classList.remove('show');
   document.getElementById('results').classList.remove('show');
+  // ── FIX 5: clear persisted previewPlayable on reset ──
+  if (currentJobId) clearPreviewPlayable(currentJobId);
+  // ────────────────────────────────────────────────────
   clearJobState();
   currentJobId = null; currentJob = null; fileSelected = false; currentFile = null; previewUrlsAreValid = false; previewPlayable = false; previewError = false; previewPollStartedAt = null;
   setSelectedOptions('mp3');
@@ -1035,8 +1145,6 @@ async function startProcessing() {
   document.getElementById('processing').classList.add('show');
   document.getElementById('results').classList.remove('show');
   const fill = document.getElementById('progressFill');
-  const label = document.getElementById('processingLabel');
-  const detail = document.getElementById('processingDetail');
   const overlayFill = document.getElementById('overlayProgressFill');
   fill.style.width = '5%'; if (overlayFill) overlayFill.style.width = '5%';
   showWorkOverlay('Preparing your split…', PROCESSING_MESSAGES[0]);
@@ -1161,6 +1269,9 @@ function failPreview(message = 'Preview could not be loaded. Please try uploadin
   previewUrlsAreValid = false;
   previewPlayable = false;
   previewError = true;
+  // ── FIX 6: clear persisted flag when preview fails ──
+  if (currentJobId) persistPreviewPlayable(currentJobId, false);
+  // ────────────────────────────────────────────────────
   setPaymentStatus(message, 'error');
   hidePaymentSection('preview failed validation');
 }
@@ -1208,7 +1319,6 @@ async function renderPreviewSection(job) {
   }
   previews.forEach(({ key, url }, i) => {
     const resolvedUrl = toApiUrl(url);
-    console.log('resolved preview url', url, resolvedUrl);
     const def = STEM_DISPLAY[key] || { name: key.replace(/_/g, ' '), icon:'🎵', color:'#8B5CF6', key:'15-sec preview' };
     const durationEntries = getPreviewDurationEntries(job);
     const backendDuration = durationEntries.find(d => d.key === key)?.duration ?? durationEntries[i]?.duration;
@@ -1232,6 +1342,9 @@ async function renderPreviewSection(job) {
     previewUrlsAreValid = true;
     previewPlayable = true;
     previewError = false;
+    // ── FIX 7: persist previewPlayable=true as soon as audio validates ──
+    if (currentJobId) persistPreviewPlayable(currentJobId, true);
+    // ────────────────────────────────────────────────────────────────────
   } catch (err) {
     if (token === previewValidationToken) failPreview('Preview could not be loaded. Please try uploading again.');
   }
@@ -1251,7 +1364,6 @@ function renderPaymentAndDownloads(job) {
   console.log('job.full_processing_status', job.full_processing_status);
 
   if (paymentReturnActive || job.payment_status === 'paid') {
-    console.log('Skipping unpaid pay branch due to payment return');
     hidePayDueToPaymentReturn();
     if (wrap) wrap.classList.remove('show');
 
@@ -1268,7 +1380,6 @@ function renderPaymentAndDownloads(job) {
         stopPolling();
         paymentReturnActive = false;
         window._pendingPaymentReturn = false;
-        console.log('paymentReturnActive', paymentReturnActive);
       } else {
         startPolling();
       }
@@ -1293,7 +1404,6 @@ function renderPaymentAndDownloads(job) {
   }
 
   if (isPaymentSuccessReturnUrl()) {
-    console.log('Skipping unpaid pay branch due to payment return');
     hidePayDueToPaymentReturn();
     return;
   }
@@ -1305,7 +1415,6 @@ function renderPaymentAndDownloads(job) {
   if (btn) { btn.style.display = ''; btn.textContent = 'Pay $0.99'; btn.disabled = !canPay(job); }
   if (note) note.style.display = '';
   if (wrap) wrap.classList.remove('show');
-  console.log('Pay button enabled?', !!(btn && !btn.disabled), 'hidden?', !!(btn && btn.style.display === 'none'));
 
   if (job.payment_status === 'paid' && job.full_processing_status === 'processing') {
     if (btn) btn.style.display = 'none';
@@ -1380,6 +1489,7 @@ function startPolling() {
   pollInterval = setInterval(() => refreshJob({ silent: true }), POLL_MS);
 }
 
+// ── FIX 8: Stripe opens in SAME tab — eliminates the tab-switch state loss ──
 async function startCheckout() {
   if (!currentJobId) { setPaymentStatus('Please create a preview first.', 'error'); showToast('Please create a preview first.'); return; }
   if (!canPay()) { setPaymentStatus('Preview is not ready yet. Please create a preview first.', 'error'); return; }
@@ -1394,21 +1504,18 @@ async function startCheckout() {
     const checkoutUrl = data.checkout_url;
     if (!checkoutUrl) throw new Error('No checkout URL returned from server.');
     saveJobState({ checkout_session_id: data.checkout_session_id || '' });
-    const opened = window.open(checkoutUrl, '_blank');
-    if (!opened) setPaymentStatus('Stripe was blocked by your browser. Please allow pop-ups and try again.', 'error');
-    else {
-      setPaymentStatus('Payment opened in a new tab. After payment, return here and we will check your file.', 'success');
-      ensureCheckStatusButton();
-      startPolling();
-    }
+    // Navigate in the SAME tab so Stripe can return to this page with ?payment=success
+    // and activatePaymentReturnFromUrl() will restore everything correctly.
+    window.location.href = checkoutUrl;
   } catch (err) {
     setPaymentStatus(friendlyJobError(err), 'error');
     showToast(friendlyJobError(err));
-  } finally {
     btn.textContent = 'Pay $0.99';
     btn.disabled = !canPay();
   }
 }
+// ────────────────────────────────────────────────────────────────────────────
+
 function ensureCheckStatusButton() {
   if (document.getElementById('btnCheckStatus')) return;
   const btn = document.createElement('button');
@@ -1416,7 +1523,7 @@ function ensureCheckStatusButton() {
   btn.type = 'button';
   btn.className = 'btn-checkout';
   btn.style.marginTop = '10px';
-  btn.textContent = 'I’ve paid — check status';
+  btn.textContent = 'I\'ve paid — check status';
   btn.onclick = () => refreshJob();
   document.getElementById('checkoutNote').insertAdjacentElement('afterend', btn);
 }
@@ -1438,6 +1545,7 @@ window.restoreSavedJobOnLoad = function restoreSavedJobOnLoad() {
 };
 activatePaymentReturnFromUrl();
 window.restoreSavedJobOnLoad();
+
 // ── SMOOTH SCROLL ──
 document.querySelectorAll('a[href^="#"]').forEach(a => {
   a.addEventListener('click', e => {
@@ -1445,7 +1553,6 @@ document.querySelectorAll('a[href^="#"]').forEach(a => {
     if (el) { e.preventDefault(); el.scrollIntoView({ behavior:'smooth' }); }
   });
 });
-
 </script>
 </body>
 </html>
