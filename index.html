@@ -1197,6 +1197,8 @@ function saveJobState(extra = {}) {
   const job = extra.job || currentJob || {};
   const jobId = extra.job_id || job.job_id || currentJobId;
   if (!jobId) return;
+  // Never persist failed or errored jobs — restoring them causes ghost polls and re-submits
+  if (job.preview_status === 'failed' || job.status === 'error') return;
   const previous = loadJobState() || {};
   localStorage.setItem(JOB_STATE_KEY, JSON.stringify({
     job_id: jobId,
@@ -1694,15 +1696,13 @@ async function startProcessing() {
     setPaymentStatus(friendlyJobError(err), 'error');
     setBusy(false); splitMode = false;
   } finally {
-    // Only clean up the upload overlay/progress bar here.
-    // Do NOT call setBusy(false) — that happens in applyJobToUi when preview resolves.
+    // Only clean up the progress bar animation here.
+    // setBusy(false) is handled exclusively by applyJobToUi when preview resolves.
     if (!isPreviewPending(currentJob?.preview_status)) {
       clearInterval(fakeProgressInterval); fakeProgressInterval = null;
-      stopStatusMessages(); hideWorkOverlay();
       fill.style.width = '100%';
       if (overlayFill) overlayFill.style.width = '100%';
       document.getElementById('processing').classList.remove('show');
-      setBusy(false); splitMode = false;
     }
   }
 }
@@ -1746,8 +1746,15 @@ function applyJobToUi(job) {
     stopStatusMessages(); hideWorkOverlay();
     // Preview is resolved — safe to release busy so user can upload another file
     setBusy(false); splitMode = false;
-    if (currentJob.full_processing_status === 'processing') startPolling();
-    else stopPolling();
+    if (currentJob.preview_status === 'failed') {
+      // Wipe localStorage immediately so restoreSavedJobOnLoad never picks this up
+      clearJobState();
+      stopPolling();
+    } else if (currentJob.full_processing_status === 'processing') {
+      startPolling();
+    } else {
+      stopPolling();
+    }
   }
 
   document.getElementById('processing').classList.remove('show');
@@ -2173,10 +2180,13 @@ window.restoreSavedJobOnLoad = function restoreSavedJobOnLoad() {
   const state = loadJobState();
   if (!state?.job_id) return;
   if (!window._fbAuth?.currentUser) return;
-  // If paymentReturnActive, _waitForAuthThenRefresh is already handling the job fetch.
-  // Only skip if the job is already loaded AND we are NOT in a payment return.
   if (!paymentReturnActive && currentJob?.job_id === state.job_id) return;
-  if (paymentReturnActive) return; // handed off to _waitForAuthThenRefresh
+  if (paymentReturnActive) return;
+  // Don't restore jobs that already failed — clear them and start fresh
+  if (state.last_seen_status && state.last_seen_status.includes('failed')) {
+    clearJobState();
+    return;
+  }
   restoreLightweightState(state);
   previewPollStartedAt = Date.now();
   restoredNotice = 'Restoring your previous upload...';
