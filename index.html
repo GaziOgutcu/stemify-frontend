@@ -373,6 +373,95 @@
     .how, .usecases, .pricing, .faq, .legal-section { padding:0 32px; }
     footer { padding:32px 32px; }
   }
+
+  /* ── SUCCESS MODAL ── */
+  .success-modal-overlay {
+    position:fixed; inset:0; z-index:200;
+    display:none; align-items:center; justify-content:center;
+    padding:24px;
+    background:rgba(2,6,23,0.82);
+    backdrop-filter:blur(8px);
+  }
+  .success-modal-overlay.show { display:flex; }
+  .success-modal {
+    width:min(560px,100%);
+    background:linear-gradient(180deg,#0f1729 0%,#080c18 100%);
+    border:1px solid rgba(16,185,129,0.35);
+    border-radius:24px;
+    padding:36px 32px 32px;
+    text-align:center;
+    box-shadow:0 0 60px rgba(16,185,129,0.18), 0 24px 80px rgba(0,0,0,0.6);
+    position:relative;
+    overflow:hidden;
+  }
+  .success-modal::before {
+    content:'';
+    position:absolute; top:-60px; left:50%; transform:translateX(-50%);
+    width:200px; height:200px;
+    background:radial-gradient(circle, rgba(16,185,129,0.18) 0%, transparent 70%);
+    pointer-events:none;
+  }
+  .success-modal-icon {
+    width:72px; height:72px; border-radius:50%;
+    background:linear-gradient(135deg,#10B981,#059669);
+    display:flex; align-items:center; justify-content:center;
+    margin:0 auto 20px;
+    box-shadow:0 0 40px rgba(16,185,129,0.45);
+    font-size:32px;
+  }
+  .success-modal-title {
+    font-family:'Space Grotesk',sans-serif;
+    font-size:26px; font-weight:700; letter-spacing:-0.5px;
+    margin-bottom:8px; color:#EEF2FF;
+  }
+  .success-modal-sub {
+    color:#7A8599; font-size:14px; line-height:1.6; margin-bottom:28px;
+  }
+  .success-modal-track {
+    background:rgba(255,255,255,0.04);
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:12px; padding:12px 16px;
+    margin-bottom:24px; text-align:left;
+    display:flex; align-items:center; gap:12px;
+  }
+  .success-modal-track-icon { font-size:22px; flex-shrink:0; }
+  .success-modal-track-name {
+    font-family:'Space Grotesk',sans-serif;
+    font-size:13px; font-weight:600; color:#EEF2FF;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .success-modal-track-meta { font-size:11px; color:#7A8599; margin-top:2px; }
+  .success-modal-downloads { display:grid; gap:10px; margin-bottom:20px; }
+  .success-modal-btn {
+    display:flex; align-items:center; justify-content:center; gap:10px;
+    width:100%; padding:14px 18px; border-radius:12px;
+    font-family:'Space Grotesk',sans-serif; font-size:15px; font-weight:600;
+    text-decoration:none; cursor:pointer; transition:all 0.2s; border:none;
+    color:#fff;
+  }
+  .success-modal-btn.zip {
+    background:linear-gradient(135deg,#10B981,#059669);
+    box-shadow:0 0 28px rgba(16,185,129,0.35);
+  }
+  .success-modal-btn.zip:hover { box-shadow:0 0 44px rgba(16,185,129,0.5); transform:translateY(-1px); }
+  .success-modal-btn.stem {
+    background:rgba(109,40,217,0.15);
+    border:1px solid rgba(109,40,217,0.35);
+  }
+  .success-modal-btn.stem:hover { background:rgba(109,40,217,0.28); transform:translateY(-1px); }
+  .success-modal-expiry { font-size:11px; color:#7A8599; margin-bottom:20px; }
+  .success-modal-close {
+    background:none; border:1px solid rgba(255,255,255,0.1);
+    color:#7A8599; padding:10px 24px; border-radius:10px;
+    font-family:inherit; font-size:13px; cursor:pointer;
+    transition:all 0.2s; width:100%;
+  }
+  .success-modal-close:hover { border-color:rgba(255,255,255,0.25); color:#EEF2FF; }
+  @media (max-width:640px) {
+    .success-modal { padding:28px 20px 24px; }
+    .success-modal-title { font-size:22px; }
+  }
+
 </style>
 </head>
 <body>
@@ -944,17 +1033,39 @@ function activatePaymentReturnFromUrl() {
   paymentReturnActive = true;
   window._pendingPaymentReturn = true;
   currentJobId = jobId;
-  // ── FIX 2: restore previewPlayable on payment return so canPay() works ──
   previewPlayable = restorePreviewPlayable(jobId);
-  // ────────────────────────────────────────────────────────────────────────
   saveJobState({ job_id: jobId, checkout_session_id: sessionId });
+
+  // Show results section immediately — don't wait for Firebase
+  document.getElementById('processing').classList.remove('show');
+  document.getElementById('results').classList.add('show');
   hidePayDueToPaymentReturn();
   setPaymentStatus('Payment confirmed — checking your download status…', 'success');
-  startPolling();
-  refreshJob({ silent: true });
-  const cleanUrl = window.location.pathname + window.location.hash;
-  history.replaceState({}, document.title, cleanUrl);
+  showWorkOverlay('Payment confirmed ✓', 'Fetching your download links…');
+
+  // Clean the URL right away so a refresh doesn't re-trigger this
+  history.replaceState({}, document.title, window.location.pathname + window.location.hash);
+
+  // Firebase auth may not be ready yet — wait for it then fetch job
+  _waitForAuthThenRefresh(jobId);
   return true;
+}
+
+// Poll until Firebase currentUser is available, then fetch job status
+function _waitForAuthThenRefresh(jobId, attempts) {
+  attempts = attempts || 0;
+  if (attempts > 30) {
+    hideWorkOverlay();
+    setPaymentStatus('Could not verify payment — please refresh the page.', 'error');
+    return;
+  }
+  if (window._fbAuth && window._fbAuth.currentUser) {
+    currentJobId = jobId;
+    startPolling();
+    refreshJob({ silent: false });
+    return;
+  }
+  setTimeout(function() { _waitForAuthThenRefresh(jobId, attempts + 1); }, 500);
 }
 function restoreLightweightState(state) {
   if (!state?.job_id) return;
@@ -1449,6 +1560,7 @@ function renderDownloadButtons(entries) {
     setPaymentStatus('Your stems are ready, but no download URLs were returned. Please contact support.', 'error');
     return;
   }
+  // Inline buttons (existing UI)
   entries.sort((a,b) => (a.key === 'zip' ? -1 : b.key === 'zip' ? 1 : 0)).forEach(entry => {
     const a = document.createElement('a');
     a.className = 'paid-download-btn' + (entry.key === 'zip' ? ' primary' : '');
@@ -1459,6 +1571,53 @@ function renderDownloadButtons(entries) {
     grid.appendChild(a);
   });
   wrap.classList.add('show');
+  // Also show the success modal
+  showSuccessModal(entries);
+}
+
+function showSuccessModal(entries) {
+  const modal = document.getElementById('successModal');
+  const dlGrid = document.getElementById('successModalDownloads');
+  const trackRow = document.getElementById('successModalTrack');
+  const trackName = document.getElementById('successModalTrackName');
+  const trackMeta = document.getElementById('successModalTrackMeta');
+  if (!modal || !dlGrid) return;
+  dlGrid.innerHTML = '';
+
+  // Track info
+  const filename = currentJob?.original_filename || loadJobState()?.original_filename || '';
+  if (filename) {
+    trackName.textContent = filename.replace(/\.[^.]+$/, '');
+    const fmt = (currentJob?.output_format || 'mp3').toUpperCase();
+    const dur = currentJob?.source_duration_seconds;
+    trackMeta.textContent = fmt + (dur ? ' · ' + Math.round(dur / 60) + ' min ' + (Math.round(dur) % 60) + ' sec' : '');
+    trackRow.style.display = 'flex';
+  }
+
+  // Download buttons
+  entries.sort((a,b) => (a.key === 'zip' ? -1 : b.key === 'zip' ? 1 : 0)).forEach(entry => {
+    const a = document.createElement('a');
+    a.className = 'success-modal-btn ' + (entry.key === 'zip' ? 'zip' : 'stem');
+    a.href = toApiUrl(entry.url);
+    a.target = '_blank';
+    a.rel = 'noopener';
+    if (entry.key === 'zip') {
+      a.innerHTML = '<span style="font-size:18px;">⬇</span> Download ZIP (both stems)';
+    } else {
+      const label = entry.key === 'vocals' ? '🎤 Download Vocals' : '🎸 Download Instrumental';
+      a.innerHTML = '<span style="font-size:16px;">⬇</span> ' + label;
+    }
+    dlGrid.appendChild(a);
+  });
+
+  modal.classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeSuccessModal() {
+  const modal = document.getElementById('successModal');
+  if (modal) modal.classList.remove('show');
+  document.body.style.overflow = '';
 }
 function buildMiniWave(i, color) {
   const mw = document.getElementById('mw' + i); if (!mw) return;
@@ -1534,14 +1693,16 @@ window.verifyStripeReturn = refreshJob;
 window.restoreSavedJobOnLoad = function restoreSavedJobOnLoad() {
   document.getElementById('splitBtn').textContent = 'Create Preview';
   const state = loadJobState();
-  if (!state?.job_id || currentJob?.job_id === state.job_id) return;
+  if (!state?.job_id) return;
   if (!window._fbAuth?.currentUser) return;
+  // If paymentReturnActive, _waitForAuthThenRefresh is already handling the job fetch.
+  // Only skip if the job is already loaded AND we are NOT in a payment return.
+  if (!paymentReturnActive && currentJob?.job_id === state.job_id) return;
+  if (paymentReturnActive) return; // handed off to _waitForAuthThenRefresh
   restoreLightweightState(state);
   previewPollStartedAt = Date.now();
-  if (!paymentReturnActive) {
-    restoredNotice = 'Restoring your previous upload...';
-  }
-  refreshJob({ silent: paymentReturnActive });
+  restoredNotice = 'Restoring your previous upload...';
+  refreshJob({ silent: false });
 };
 activatePaymentReturnFromUrl();
 window.restoreSavedJobOnLoad();
@@ -1554,5 +1715,25 @@ document.querySelectorAll('a[href^="#"]').forEach(a => {
   });
 });
 </script>
+
+<!-- ── SUCCESS DOWNLOAD MODAL ── -->
+<div class="success-modal-overlay" id="successModal" role="dialog" aria-modal="true" aria-labelledby="successModalTitle">
+  <div class="success-modal">
+    <div class="success-modal-icon">✅</div>
+    <div class="success-modal-title" id="successModalTitle">Your stems are ready!</div>
+    <div class="success-modal-sub">Payment confirmed. Download your full-length vocal and instrumental tracks below.</div>
+    <div class="success-modal-track" id="successModalTrack" style="display:none;">
+      <div class="success-modal-track-icon">🎵</div>
+      <div>
+        <div class="success-modal-track-name" id="successModalTrackName"></div>
+        <div class="success-modal-track-meta" id="successModalTrackMeta"></div>
+      </div>
+    </div>
+    <div class="success-modal-downloads" id="successModalDownloads"></div>
+    <div class="success-modal-expiry">⏱ Downloads available for 24 hours</div>
+    <button class="success-modal-close" onclick="closeSuccessModal()">Close and continue</button>
+  </div>
+</div>
+
 </body>
 </html>
