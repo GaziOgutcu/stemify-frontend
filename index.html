@@ -707,7 +707,7 @@
     <div class="work-steps" id="workSteps">
       <div class="work-step active">Uploading your song…</div>
       <div class="work-step">Creating your 15-second preview…</div>
-      <div class="work-step">Preparing the full split in the background…</div>
+      <div class="work-step">Validating preview audio…</div>
       <div class="work-step">This usually takes around 20–30 seconds.</div>
     </div>
   </div>
@@ -1018,8 +1018,8 @@ let paymentReturnActive = false;
 const PROCESSING_MESSAGES = [
   'Uploading your song…',
   'Creating your 15-second preview…',
-  'Preparing the full split in the background…',
-  'This usually takes around 20–30 seconds.'
+  'Creating your 15-second preview…',
+  'Almost there — validating preview audio…'
 ];
 
 window._pendingPaymentReturn = false;
@@ -1046,9 +1046,9 @@ function setLiveProcessingMessage(message) {
   const overlayMessage = document.getElementById('workMessage');
   const overlaySub = document.getElementById('workSub');
   if (label) label.textContent = message;
-  if (detail) detail.textContent = 'Preparing the full split in the background. This usually takes around 20–30 seconds.';
+  if (detail) detail.textContent = 'Only the 15-second preview is being processed now. Full downloads start after payment.';
   if (overlayMessage) overlayMessage.textContent = message;
-  if (overlaySub) overlaySub.textContent = 'Preview and full stems are being prepared in the background.';
+  if (overlaySub) overlaySub.textContent = 'Only the 15-second preview is being prepared now.';
   document.querySelectorAll('#workSteps .work-step').forEach((step, index) => {
     step.classList.toggle('active', PROCESSING_MESSAGES[index] === message);
   });
@@ -1552,7 +1552,7 @@ function showPreviewProcessing(message = 'Creating preview...') {
   showWorkOverlay('Preparing your split…', message);
   if (!statusMessageInterval) startStatusMessages(1);
   if (label) label.textContent = message;
-  if (detail) detail.textContent = 'Preparing the full split in the background. This usually takes around 20–30 seconds.';
+  if (detail) detail.textContent = 'Only the 15-second preview is being processed now. Full downloads start after payment.';
   if (fill && !fill.style.width) fill.style.width = '35%';
   hidePaymentSection('preview is not ready');
 }
@@ -1748,7 +1748,7 @@ function applyJobToUi(job) {
   const filename = currentJob.original_filename || loadJobState()?.original_filename || currentFile?.name || '';
   title.textContent = currentJob.preview_status === 'ready' ? 'Your 15-second preview is ready 🎧' : 'Preview failed';
   sub.textContent = currentJob.preview_status === 'ready'
-    ? 'Listen to both stems below. Your full split is being prepared in the background, so downloads can unlock faster after payment.'
+    ? 'Listen to both stems below. Like what you hear? Pay once to process and download the full split.'
     : 'Preview could not be created. Please try another file.';
   const filenameEl = document.getElementById('resultFilename');
   if (filename) { filenameEl.textContent = 'Current track: ' + filename; filenameEl.style.display = ''; }
@@ -1965,7 +1965,7 @@ function renderPaymentAndDownloads(job) {
     stopPolling();
   } else if (job.preview_status === 'ready') {
     hideWorkOverlay();
-    setPaymentStatus(restoredNotice || 'Preview ready. Your full split is being prepared in the background, so downloads can unlock faster after payment.');
+    setPaymentStatus(restoredNotice || 'Preview ready. Pay once to process and download the full split.');
     restoredNotice = '';
   }
 }
@@ -2107,7 +2107,7 @@ function startPolling() {
   pollInterval = setInterval(() => refreshJob({ silent: true }), POLL_MS);
 }
 
-// ── FIX 8: Stripe opens in SAME tab — eliminates the tab-switch state loss ──
+// Stripe opens in a new tab so the upload/preview state stays on this page
 async function startCheckout() {
   if (!currentJobId) { setPaymentStatus('Please create a preview first.', 'error'); showToast('Please create a preview first.'); return; }
   if (!canPay()) { setPaymentStatus('Preview is not ready yet. Please create a preview first.', 'error'); return; }
@@ -2124,7 +2124,8 @@ async function startCheckout() {
     saveJobState({ checkout_session_id: data.checkout_session_id || '' });
     // Navigate in the SAME tab so Stripe can return to this page with ?payment=success
     // and activatePaymentReturnFromUrl() will restore everything correctly.
-    window.location.href = checkoutUrl;
+    const paymentWindow = window.open(checkoutUrl, '_blank', 'noopener,noreferrer');
+      if (!paymentWindow) window.location.href = checkoutUrl;
   } catch (err) {
     setPaymentStatus(friendlyJobError(err), 'error');
     showToast(friendlyJobError(err));
